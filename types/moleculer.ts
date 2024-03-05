@@ -35,6 +35,10 @@ export interface EntityChangedParams<T> {
   oldData?: T;
 }
 
+export type ResponseHeadersMeta = {
+  $responseHeaders?: Record<string, string>;
+};
+
 export type MultipartMeta = {
   $multipart: Record<string, string>;
   $params: Record<string, string>;
