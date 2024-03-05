@@ -7,7 +7,7 @@ services:
     networks:
       - internal
     ports:
-      - 5112:5432
+      - 5612:5432
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -20,7 +20,7 @@ services:
     networks:
       - internal
     ports:
-      - 6112:6379
+      - 6612:6379
 
 networks:
   internal:

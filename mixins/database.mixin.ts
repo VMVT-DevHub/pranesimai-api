@@ -62,6 +62,12 @@ export default function (opts: any = {}) {
 
     async started() {
       await this.getAdapter();
+      // Seeding if the DB is empty
+      const count = await this.countEntities(null, {});
+      if (count == 0 && _.isFunction(this.seedDB)) {
+        this.logger.info(`Seed '${opts.collection}' collection...`);
+        await this.seedDB();
+      }
     },
 
     actions: {
