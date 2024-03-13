@@ -17,9 +17,6 @@ import { QuestionOption } from './questionOptions.service';
 import { Survey } from './surveys.service';
 
 export enum QuestionType {
-  // custom value - { option: number; data: { fullName: string; email: string; personalCode: number } }
-  AUTH = 'AUTH',
-
   // value = option.id
   SELECT = 'SELECT',
   RADIO = 'RADIO',
@@ -81,6 +78,7 @@ export type Question<
   mixins: [
     DbConnection({
       collection: 'questions',
+      rest: false,
     }),
   ],
 
@@ -107,7 +105,6 @@ export type Question<
         type: 'number',
         columnType: 'integer',
         columnName: 'surveyId',
-        required: true,
         populate: {
           action: 'surveys.resolve',
         },

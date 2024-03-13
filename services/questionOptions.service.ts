@@ -44,6 +44,7 @@ export type QuestionOption<
   mixins: [
     DbConnection({
       collection: 'questionOptions',
+      rest: false,
     }),
   ],
 

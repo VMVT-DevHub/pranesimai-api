@@ -3,7 +3,7 @@
 import cookie from 'cookie';
 import crypto from 'crypto';
 import moleculer, { Context } from 'moleculer';
-import { Action, Service } from 'moleculer-decorators';
+import { Action, Method, Service } from 'moleculer-decorators';
 import DbConnection from '../mixins/database.mixin';
 import { Survey } from './surveys.service';
 
@@ -24,6 +24,7 @@ interface Fields extends CommonFields {
   survey: Survey['id'];
   lastResponse: Response['id'];
   finishedAt: Date;
+  canceledAt: Date;
 }
 
 interface Populates extends CommonPopulates {
@@ -42,6 +43,7 @@ export type Session<
   mixins: [
     DbConnection({
       collection: 'sessions',
+      rest: false,
     }),
   ],
 
@@ -78,6 +80,7 @@ export type Session<
       },
 
       finishedAt: 'date',
+      canceledAt: 'date',
 
       ...COMMON_FIELDS,
     },
@@ -143,12 +146,30 @@ export default class SessionsService extends moleculer.Service {
       id: 'number',
     },
   })
-  async end(ctx: Context<{ id: Session['id'] }, ResponseHeadersMeta>) {
+  async finish(ctx: Context<{ id: Session['id'] }, ResponseHeadersMeta>) {
     await this.updateEntity(ctx, {
       id: ctx.params.id,
       finishedAt: new Date(),
     });
 
+    this.removeCookie(ctx);
+  }
+
+  @Action({
+    rest: 'POST /cancel',
+    auth: RestrictionType.SESSION,
+  })
+  async cancel(ctx: Context<unknown, MetaSession & ResponseHeadersMeta>) {
+    await this.updateEntity(ctx, {
+      id: ctx.meta.session.id,
+      canceledAt: new Date(),
+    });
+
+    this.removeCookie(ctx);
+  }
+
+  @Method
+  removeCookie(ctx: Context<unknown, ResponseHeadersMeta>) {
     ctx.meta.$responseHeaders = {
       'Set-Cookie': cookie.serialize('vmvt-session-token', '', {
         path: '/',

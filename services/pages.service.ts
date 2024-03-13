@@ -14,15 +14,13 @@ import {
 } from '../types';
 import { Question } from './questions.service';
 
-export enum PageType {
-  STATIC = 'STATIC',
-  DYNAMIC = 'DYNAMIC',
-}
-
 interface Fields extends CommonFields {
   title: string;
   description: string;
-  type: PageType;
+  progress: {
+    current: number;
+    total: number;
+  };
   questions: undefined;
 }
 
@@ -40,6 +38,7 @@ export type Page<
   mixins: [
     DbConnection({
       collection: 'pages',
+      rest: false,
     }),
   ],
   settings: {
@@ -51,15 +50,15 @@ export type Page<
         secure: true,
       },
 
-      type: {
-        type: 'string',
-        required: true,
-        enum: Object.values(PageType),
-        default: PageType.STATIC,
-      },
-
       title: 'string',
       description: 'string',
+      progress: {
+        type: 'object',
+        properties: {
+          current: 'number',
+          total: 'number',
+        },
+      },
 
       questions: {
         type: 'array',
