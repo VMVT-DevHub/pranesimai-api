@@ -1,7 +1,7 @@
 'use strict';
 
 import moleculer, { Context } from 'moleculer';
-import { Action, Service } from 'moleculer-decorators';
+import { Action, Method, Service } from 'moleculer-decorators';
 import DbConnection from '../mixins/database.mixin';
 import { Session } from './sessions.service';
 import { Question, QuestionType } from './questions.service';
@@ -17,6 +17,7 @@ import {
 import { Page, PageType } from './pages.service';
 import { QuestionOption } from './questionOptions.service';
 import { Survey } from './surveys.service';
+import { MetaSession, RestrictionType } from './api.service';
 
 interface Fields extends CommonFields {
   session: Session['id'];
@@ -104,14 +105,29 @@ export type Response<
 
     scopes: {
       ...COMMON_SCOPES,
+
+      async session(q: any, ctx: Context<unknown, MetaSession>) {
+        if (!ctx?.meta?.session) return q;
+
+        return {
+          ...q,
+          session: ctx.meta.session.id,
+        };
+      },
     },
 
-    defaultScopes: [...COMMON_DEFAULT_SCOPES],
+    defaultScopes: [...COMMON_DEFAULT_SCOPES, 'session'],
+  },
+  actions: {
+    get: {
+      auth: RestrictionType.SESSION,
+    },
   },
 })
 export default class ResponsesService extends moleculer.Service {
   @Action({
     rest: 'POST /:id/respond',
+    auth: RestrictionType.SESSION,
     params: {
       id: 'number|convert',
       values: {
@@ -276,9 +292,8 @@ export default class ResponsesService extends moleculer.Service {
       page = survey.lastPage;
       questions = [];
 
-      await ctx.call('sessions.update', {
+      await ctx.call('sessions.end', {
         id: response.session.id,
-        finishedAt: new Date(),
       });
     } else {
       Object.keys(nextPageValues).forEach((qId) => {
@@ -327,5 +342,22 @@ export default class ResponsesService extends moleculer.Service {
     return {
       nextResponse: nextResponse.id,
     };
+  }
+
+  @Method
+  async checkScopeAuthority(
+    _ctx: Context<unknown, MetaSession>,
+    scopeName: string,
+    operation: 'add' | 'remove',
+  ) {
+    if (scopeName === 'session') {
+      // do NOT allow to remove the scope
+      if (operation === 'remove') {
+        return false;
+      }
+    }
+
+    // Allow add/remove other scopes by default and by request
+    return true;
   }
 }

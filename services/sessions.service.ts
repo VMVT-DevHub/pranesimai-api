@@ -1,5 +1,6 @@
 'use strict';
 
+import cookie from 'cookie';
 import crypto from 'crypto';
 import moleculer, { Context } from 'moleculer';
 import { Action, Service } from 'moleculer-decorators';
@@ -13,8 +14,10 @@ import {
   COMMON_FIELDS,
   COMMON_SCOPES,
   Table,
+  ResponseHeadersMeta,
 } from '../types';
 import { Response } from './responses.service';
+import { MetaSession, RestrictionType } from './api.service';
 
 interface Fields extends CommonFields {
   token: string;
@@ -72,9 +75,6 @@ export type Session<
 
       token: {
         type: 'string',
-        set() {
-          return crypto.randomBytes(64).toString('hex');
-        },
       },
 
       finishedAt: 'date',
@@ -91,16 +91,40 @@ export type Session<
 })
 export default class SessionsService extends moleculer.Service {
   @Action({
-    rest: 'POST /start',
+    rest: 'GET /current',
+    auth: RestrictionType.SESSION,
   })
-  async start(ctx: Context<Partial<Session>>) {
+  async current(ctx: Context<unknown, MetaSession>) {
+    return ctx.meta.session;
+  }
+
+  @Action({
+    rest: 'POST /start',
+    params: {
+      survey: 'number',
+    },
+  })
+  async start(ctx: Context<Partial<Session>, ResponseHeadersMeta>) {
     const survey: Survey<'firstPage'> = await ctx.call('surveys.resolve', {
       id: ctx.params.survey,
       populate: 'firstPage',
       throwIfNotExist: true,
     });
 
-    const session: Session = await this.createEntity(ctx);
+    const token = crypto.randomBytes(64).toString('hex');
+
+    const session: Session = await this.createEntity(ctx, {
+      survey: ctx.params.survey,
+      token,
+    });
+
+    ctx.meta.$responseHeaders = {
+      'Set-Cookie': cookie.serialize('vmvt-session-token', session.token, {
+        path: '/',
+        httpOnly: true,
+        maxAge: 60 * 60 * 24 * 7, // 1 week
+      }),
+    };
 
     const lastResponse: Response = await ctx.call('responses.create', {
       session: session.id,
@@ -112,5 +136,25 @@ export default class SessionsService extends moleculer.Service {
       id: session.id,
       lastResponse: lastResponse.id,
     });
+  }
+
+  @Action({
+    params: {
+      id: 'number',
+    },
+  })
+  async end(ctx: Context<{ id: Session['id'] }, ResponseHeadersMeta>) {
+    await this.updateEntity(ctx, {
+      id: ctx.params.id,
+      finishedAt: new Date(),
+    });
+
+    ctx.meta.$responseHeaders = {
+      'Set-Cookie': cookie.serialize('vmvt-session-token', '', {
+        path: '/',
+        httpOnly: true,
+        maxAge: 0,
+      }),
+    };
   }
 }

@@ -1,7 +1,18 @@
+import cookie from 'cookie';
 import moleculer, { Context, Errors } from 'moleculer';
 import { Action, Method, Service } from 'moleculer-decorators';
-import ApiGateway from 'moleculer-web';
+import ApiGateway, { IncomingRequest, Route } from 'moleculer-web';
 import { EndpointType } from '../types';
+import { Session } from './sessions.service';
+
+export interface MetaSession {
+  session: Session;
+}
+
+export enum RestrictionType {
+  PUBLIC = 'PUBLIC',
+  SESSION = 'SESSION',
+}
 
 @Service({
   name: 'api',
@@ -60,10 +71,10 @@ import { EndpointType } from '../types';
         },
 
         // Enable authentication. Implement the logic into `authenticate` method. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Authentication
-        authentication: false,
+        authentication: true,
 
         // Enable authorization. Implement the logic into `authorize` method. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Authorization
-        authorization: false,
+        authorization: true,
 
         // Calling options. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Calling-options
         callingOptions: {},
@@ -108,5 +119,53 @@ export default class ApiService extends moleculer.Service {
     return {
       timestamp: Date.now(),
     };
+  }
+
+  @Method
+  async authenticate(ctx: Context<unknown, MetaSession>, _route: Route, req: IncomingRequest) {
+    const restrictionType = this.getRestrictionType(req);
+
+    if (restrictionType === RestrictionType.PUBLIC) {
+      return;
+    }
+
+    const cookies = cookie.parse(req.headers.cookie || '');
+    if (!cookies['vmvt-session-token']) {
+      return;
+    }
+
+    const session: Session = await ctx.call('sessions.findOne', {
+      query: {
+        token: cookies['vmvt-session-token'],
+      },
+    });
+
+    if (!session) {
+      return;
+    }
+
+    ctx.meta.session = session;
+  }
+
+  @Method
+  async authorize(
+    ctx: Context<unknown, MetaSession>,
+    _route: Route,
+    req: IncomingRequest,
+  ): Promise<unknown> {
+    const restrictionType = this.getRestrictionType(req);
+
+    if (restrictionType === RestrictionType.PUBLIC) {
+      return;
+    }
+
+    if (!ctx.meta.session) {
+      throw new ApiGateway.Errors.UnAuthorizedError(ApiGateway.Errors.ERR_INVALID_TOKEN, null);
+    }
+  }
+
+  @Method
+  getRestrictionType(req: IncomingRequest) {
+    return req.$action.auth || req.$action.service?.settings?.auth || RestrictionType.PUBLIC;
   }
 }
