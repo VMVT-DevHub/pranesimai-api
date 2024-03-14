@@ -1,7 +1,7 @@
 'use strict';
 
-import moleculer from 'moleculer';
-import { Method, Service } from 'moleculer-decorators';
+import moleculer, { Context } from 'moleculer';
+import { Action, Method, Service } from 'moleculer-decorators';
 import DbConnection from '../mixins/database.mixin';
 
 import {
@@ -24,6 +24,7 @@ interface Fields extends CommonFields {
   title: string;
   description: string;
   icon: string;
+  priority: number;
   firstPage: Page['id'];
   authType: SurveyAuthType;
 }
@@ -60,6 +61,11 @@ export type Survey<
       description: 'string',
       icon: 'string',
 
+      priority: {
+        type: 'number',
+        default: 0,
+      },
+
       firstPage: {
         type: 'number',
         columnType: 'integer',
@@ -89,11 +95,14 @@ export type Survey<
 
     defaultScopes: [...COMMON_DEFAULT_SCOPES],
   },
-
-  actions: {
-    find: {
-      rest: 'GET /',
-    },
-  },
 })
-export default class SurveysService extends moleculer.Service {}
+export default class SurveysService extends moleculer.Service {
+  @Action({
+    rest: 'GET /',
+  })
+  async getAll(ctx: Context) {
+    return this.findEntities(ctx, {
+      sort: '-priority',
+    });
+  }
+}

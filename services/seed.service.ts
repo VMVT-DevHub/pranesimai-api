@@ -4,7 +4,7 @@ import moleculer from 'moleculer';
 import { Action, Method, Service } from 'moleculer-decorators';
 import { Survey, SurveyAuthType } from './surveys.service';
 import { Page } from './pages.service';
-import { Question, QuestionType } from './questions.service';
+import { AuthRelation, Question, QuestionType } from './questions.service';
 import { QuestionOption } from './questionOptions.service';
 
 type SurveyTemplate = {
@@ -24,6 +24,7 @@ type SurveyTemplate = {
       description?: Question['description'];
       required: Question['required'];
       riskEvaluation: Question['riskEvaluation'];
+      authRelation?: Question['authRelation'];
       condition?: {
         question: string; // excel id
         value?: Question['condition']['value']; // if not present, will be detected automatically
@@ -108,6 +109,7 @@ const pages = {
     questions: [
       q.input(id, id + 1, 'El. pašto adresas', {
         riskEvaluation: false,
+        authRelation: AuthRelation.EMAIL,
         ...q1,
       }),
       ...additionalQuestinos,
@@ -793,6 +795,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       pages.kontaktiniai(2, {}, [
         q.input(3, 4, 'Prašome nurodyti savo kontaktinį telefono numerį', {
           riskEvaluation: false,
+          authRelation: AuthRelation.PHONE,
         }),
       ]),
 

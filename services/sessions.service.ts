@@ -2,10 +2,10 @@
 
 import cookie from 'cookie';
 import crypto from 'crypto';
-import moleculer, { Context } from 'moleculer';
+import moleculer, { Context, Errors } from 'moleculer';
 import { Action, Method, Service } from 'moleculer-decorators';
 import DbConnection from '../mixins/database.mixin';
-import { Survey } from './surveys.service';
+import { Survey, SurveyAuthType } from './surveys.service';
 
 import {
   CommonFields,
@@ -18,6 +18,7 @@ import {
 } from '../types';
 import { Response } from './responses.service';
 import { MetaSession, RestrictionType } from './api.service';
+import { AuthRelation, Question } from './questions.service';
 
 interface Fields extends CommonFields {
   token: string;
@@ -25,6 +26,9 @@ interface Fields extends CommonFields {
   lastResponse: Response['id'];
   finishedAt: Date;
   canceledAt: Date;
+  auth: boolean;
+  phone: string;
+  email: string;
 }
 
 interface Populates extends CommonPopulates {
@@ -79,6 +83,10 @@ export type Session<
         type: 'string',
       },
 
+      auth: 'boolean',
+      email: 'string',
+      phone: 'string',
+
       finishedAt: 'date',
       canceledAt: 'date',
 
@@ -104,20 +112,92 @@ export default class SessionsService extends moleculer.Service {
   @Action({
     rest: 'POST /start',
     params: {
-      survey: 'number',
+      survey: 'number|convert',
+      auth: 'boolean|convert|optional',
     },
   })
-  async start(ctx: Context<Partial<Session>, ResponseHeadersMeta>) {
-    const survey: Survey<'firstPage'> = await ctx.call('surveys.resolve', {
+  async start(ctx: Context<{ survey: Survey['id']; auth?: boolean }, ResponseHeadersMeta>) {
+    const survey: Survey = await ctx.call('surveys.resolve', {
       id: ctx.params.survey,
+      throwIfNotExist: true,
+    });
+
+    if (
+      survey.authType === SurveyAuthType.REQUIRED ||
+      (survey.authType === SurveyAuthType.OPTIONAL && ctx.params.auth)
+    ) {
+      const response: {
+        ticket: string;
+        host: string;
+        url: string;
+      } = await ctx.call('http.post', {
+        url: `${process.env.VIISP_HOST}/auth/sign`,
+        opt: {
+          responseType: 'json',
+          json: {
+            survey: survey.id,
+          },
+        },
+      });
+
+      ctx.meta.$statusCode = 302;
+      ctx.meta.$location = response.url;
+    } else {
+      await this.startSurvey(ctx, survey.id, false);
+    }
+  }
+
+  @Action({
+    rest: 'POST /evartai',
+    params: {
+      ticket: 'string',
+      customData: 'string',
+    },
+  })
+  async evartai(ctx: Context<{ ticket: string; customData: string }>) {
+    const { ticket, customData } = ctx.params;
+    const { survey }: { survey: Survey['id'] } = JSON.parse(customData);
+
+    const {
+      email,
+      phoneNumber: phone,
+    }: {
+      email: string;
+      phoneNumber: string;
+    } = await ctx.call('http.get', {
+      url: `${process.env.VIISP_HOST}/auth/data?ticket=${ticket}`,
+      opt: {
+        responseType: 'json',
+      },
+    });
+
+    await this.startSurvey(ctx, survey, true, email, phone);
+  }
+
+  @Method
+  async startSurvey(
+    ctx: Context<unknown, ResponseHeadersMeta>,
+    id: Survey['id'],
+    auth: Session['auth'],
+    email?: Session['email'],
+    phone?: Session['phone'],
+  ) {
+    const survey: Survey<'firstPage'> = await ctx.call('surveys.resolve', {
+      id: id,
       populate: 'firstPage',
       throwIfNotExist: true,
     });
 
+    let firstPage = survey.firstPage;
+    let questions = firstPage.questions;
+
     const token = crypto.randomBytes(64).toString('hex');
 
     const session: Session = await this.createEntity(ctx, {
-      survey: ctx.params.survey,
+      survey: survey.id,
+      auth,
+      email,
+      phone,
       token,
     });
 
@@ -128,17 +208,52 @@ export default class SessionsService extends moleculer.Service {
         maxAge: 60 * 60 * 24 * 7, // 1 week
       }),
     };
+    const values: Response['values'] = {};
+
+    if (auth) {
+      questions.forEach((question) => {
+        if (question.authRelation) {
+          switch (question.authRelation) {
+            case AuthRelation.EMAIL:
+              values[question.id] = email;
+              break;
+
+            case AuthRelation.PHONE:
+              values[question.id] = phone;
+              break;
+          }
+        }
+      });
+    } else {
+      questions = questions.filter((q) => !q.authRelation);
+
+      if (!questions.length) {
+        const lastQuestion = firstPage.questions[firstPage.questions.length - 1];
+
+        const nextQuestion: Question<'page'> = await ctx.call('questions.resolve', {
+          id: lastQuestion.nextQuestion,
+          populate: 'page',
+        });
+
+        firstPage = nextQuestion.page;
+        questions = nextQuestion.page.questions;
+      }
+    }
 
     const lastResponse: Response = await ctx.call('responses.create', {
       session: session.id,
-      page: survey.firstPage.id,
-      questions: survey.firstPage.questions.map((question) => question.id),
+      page: firstPage.id,
+      questions: questions.map((question) => question.id),
+      values,
     });
 
-    return this.updateEntity(ctx, {
+    await this.updateEntity(ctx, {
       id: session.id,
       lastResponse: lastResponse.id,
     });
+
+    ctx.meta.$statusCode = 302;
+    ctx.meta.$location = '/';
   }
 
   @Action({

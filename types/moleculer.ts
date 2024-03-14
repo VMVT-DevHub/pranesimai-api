@@ -37,6 +37,8 @@ export interface EntityChangedParams<T> {
 
 export type ResponseHeadersMeta = {
   $responseHeaders?: Record<string, string>;
+  $statusCode?: number;
+  $location?: string;
 };
 
 export type MultipartMeta = {

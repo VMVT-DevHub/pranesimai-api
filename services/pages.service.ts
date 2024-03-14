@@ -69,6 +69,7 @@ export type Page<
               page: { $in: entities.map((e) => e.id) },
             },
             populate: 'options',
+            sort: '-priority',
           });
 
           return entities.map((entity) =>
