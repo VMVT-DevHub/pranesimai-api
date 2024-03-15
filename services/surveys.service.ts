@@ -1,7 +1,7 @@
 'use strict';
 
-import moleculer from 'moleculer';
-import { Method, Service } from 'moleculer-decorators';
+import moleculer, { Context } from 'moleculer';
+import { Action, Method, Service } from 'moleculer-decorators';
 import DbConnection from '../mixins/database.mixin';
 
 import {
@@ -14,17 +14,23 @@ import {
 } from '../types';
 import { Page } from './pages.service';
 
+export enum SurveyAuthType {
+  OPTIONAL = 'OPTIONAL',
+  REQUIRED = 'REQUIRED',
+  NONE = 'NONE',
+}
+
 interface Fields extends CommonFields {
   title: string;
   description: string;
   icon: string;
+  priority: number;
   firstPage: Page['id'];
-  lastPage: Page['id'];
+  authType: SurveyAuthType;
 }
 
 interface Populates extends CommonPopulates {
   firstPage: Page<'questions'>;
-  lastPage: Page<'questions'>;
 }
 
 export type Survey<
@@ -38,6 +44,7 @@ export type Survey<
   mixins: [
     DbConnection({
       collection: 'surveys',
+      rest: false,
     }),
   ],
 
@@ -54,6 +61,11 @@ export type Survey<
       description: 'string',
       icon: 'string',
 
+      priority: {
+        type: 'number',
+        default: 0,
+      },
+
       firstPage: {
         type: 'number',
         columnType: 'integer',
@@ -67,14 +79,11 @@ export type Survey<
         },
       },
 
-      lastPage: {
-        type: 'number',
-        columnType: 'integer',
-        columnName: 'lastPageId',
+      authType: {
+        type: 'string',
         required: true,
-        populate: {
-          action: 'pages.resolve',
-        },
+        enum: Object.values(SurveyAuthType),
+        default: SurveyAuthType.NONE,
       },
 
       ...COMMON_FIELDS,
@@ -87,4 +96,13 @@ export type Survey<
     defaultScopes: [...COMMON_DEFAULT_SCOPES],
   },
 })
-export default class SurveysService extends moleculer.Service {}
+export default class SurveysService extends moleculer.Service {
+  @Action({
+    rest: 'GET /',
+  })
+  async getAll(ctx: Context) {
+    return this.findEntities(ctx, {
+      sort: '-priority',
+    });
+  }
+}

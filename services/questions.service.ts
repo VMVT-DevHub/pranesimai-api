@@ -17,9 +17,6 @@ import { QuestionOption } from './questionOptions.service';
 import { Survey } from './surveys.service';
 
 export enum QuestionType {
-  // custom value - { option: number; data: { fullName: string; email: string; personalCode: number } }
-  AUTH = 'AUTH',
-
   // value = option.id
   SELECT = 'SELECT',
   RADIO = 'RADIO',
@@ -42,21 +39,23 @@ export enum QuestionType {
   LOCATION = 'LOCATION',
 }
 
-export interface AuthData {
-  relatedQuestion: Question['id'];
+export enum AuthRelation {
+  EMAIL = 'EMAIL',
+  PHONE = 'PHONE',
 }
 
 interface Fields extends CommonFields {
   page: Page['id'];
   survey: Survey['id'];
   required: boolean;
+  priority: number;
   riskEvaluation: boolean;
   type: QuestionType;
   title?: string;
   hint?: string;
   description?: string;
   nextQuestion?: Question['id'];
-  data: AuthData;
+  authRelation?: AuthRelation;
   condition?: {
     question: Question['id'];
     value: any;
@@ -65,7 +64,7 @@ interface Fields extends CommonFields {
 }
 
 interface Populates extends CommonPopulates {
-  page: Page;
+  page: Page<'questions'>;
   survey: Survey;
   options: QuestionOption[];
 }
@@ -81,6 +80,7 @@ export type Question<
   mixins: [
     DbConnection({
       collection: 'questions',
+      rest: false,
     }),
   ],
 
@@ -100,6 +100,9 @@ export type Question<
         required: true,
         populate: {
           action: 'pages.resolve',
+          params: {
+            populate: 'questions',
+          },
         },
       },
 
@@ -107,7 +110,6 @@ export type Question<
         type: 'number',
         columnType: 'integer',
         columnName: 'surveyId',
-        required: true,
         populate: {
           action: 'surveys.resolve',
         },
@@ -123,9 +125,19 @@ export type Question<
         default: QuestionType.INPUT,
       },
 
+      authRelation: {
+        type: 'string',
+        enum: Object.values(AuthRelation),
+      },
+
       title: 'string',
       description: 'string',
       hint: 'string',
+
+      priority: {
+        type: 'number',
+        default: 0,
+      },
 
       data: {
         type: 'object',

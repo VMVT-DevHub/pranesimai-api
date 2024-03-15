@@ -14,9 +14,8 @@ import {
   COMMON_SCOPES,
   Table,
 } from '../types';
-import { Page, PageType } from './pages.service';
+import { Page } from './pages.service';
 import { QuestionOption } from './questionOptions.service';
-import { Survey } from './surveys.service';
 import { MetaSession, RestrictionType } from './api.service';
 
 interface Fields extends CommonFields {
@@ -44,6 +43,7 @@ export type Response<
   mixins: [
     DbConnection({
       collection: 'responses',
+      rest: false,
     }),
   ],
   settings: {
@@ -120,6 +120,7 @@ export type Response<
   },
   actions: {
     get: {
+      rest: 'GET /:id',
       auth: RestrictionType.SESSION,
     },
   },
@@ -151,10 +152,12 @@ export default class ResponsesService extends moleculer.Service {
 
     const { values } = ctx.params;
     const errors: Record<string | number, string> = {};
-    const nextPageValues: Response['values'] = {};
-    const nextQuestionsIds: Array<Question['id']> = [];
+    let nextQuestionsIds: Array<Question['id']> = [];
 
     for (const question of response.questions) {
+      // reset next questions array, so only last question decides next page question(s)
+      nextQuestionsIds = [];
+
       if (question.nextQuestion) {
         nextQuestionsIds.push(question.nextQuestion);
       }
@@ -175,31 +178,6 @@ export default class ResponsesService extends moleculer.Service {
       let option: QuestionOption;
 
       switch (question.type) {
-        case QuestionType.AUTH:
-          option = question.options.find((o) => o.id === value?.option);
-
-          if (!option) {
-            errors[question.id] = 'AUTH_OPTION';
-            break;
-          }
-
-          if (option.data?.auth) {
-            if (!value.data?.personalCode || !value.data?.email || !value.data?.fullName) {
-              errors[question.id] = 'AUTH_DATA';
-              break;
-            }
-
-            if (question.data?.relatedQuestion) {
-              nextPageValues[question.data.relatedQuestion] = value.data.email;
-            }
-          }
-
-          if (option.nextQuestion) {
-            nextQuestionsIds.push(option.nextQuestion);
-          }
-
-          break;
-
         case QuestionType.RADIO:
         case QuestionType.SELECT:
           option = question.options.find((o) => o.id === value);
@@ -261,7 +239,7 @@ export default class ResponsesService extends moleculer.Service {
     }
 
     let page: Page['id'];
-    let questions: Array<Question['id']>;
+    const questions: Array<Question['id']> = [];
 
     if (nextQuestionsIds.length) {
       const nextQuestions: Question[] = await ctx.call('questions.resolve', {
@@ -269,43 +247,54 @@ export default class ResponsesService extends moleculer.Service {
       });
 
       if (nextQuestions.length) {
-        // TODO: must be one page, if more pages - log error in data
+        // TODO: must be the same page on all questions, if not - log error in database
         page = nextQuestions[0].page;
 
-        const pageWithQuestions: Page<'questions'> = await ctx.call('pages.resolve', {
+        const { questions: pageQuestions }: Page<'questions'> = await ctx.call('pages.resolve', {
           id: page,
           populate: 'questions',
         });
 
-        if (pageWithQuestions.type === PageType.STATIC) {
-          questions = pageWithQuestions.questions.map((q) => q.id);
-        } else {
-          questions = nextQuestionsIds.filter((qId) =>
-            pageWithQuestions.questions.some((q) => q.id === qId),
-          );
+        // TODO: infinity loop possible if database has error
+        function traverseNextQuestions(questionId: Question['id']) {
+          const question = pageQuestions.find((q) => q.id === questionId);
+          if (!question) return;
+
+          questions.push(questionId);
+
+          if (question.nextQuestion) {
+            traverseNextQuestions(question.nextQuestion);
+          }
+
+          if (question.options?.length) {
+            for (const option of question.options) {
+              if (option.nextQuestion) {
+                traverseNextQuestions(option.nextQuestion);
+              }
+            }
+          }
+        }
+
+        for (const questionId of nextQuestionsIds) {
+          traverseNextQuestions(questionId);
         }
       }
     }
 
-    if (!questions?.length || !page) {
-      const survey: Survey = await ctx.call('surveys.resolve', { id: response.session.survey });
-      page = survey.lastPage;
-      questions = [];
-
-      await ctx.call('sessions.end', {
-        id: response.session.id,
-      });
-    } else {
-      Object.keys(nextPageValues).forEach((qId) => {
-        if (!questions.includes(Number(qId))) {
-          delete nextPageValues[Number(qId)];
-        }
-      });
-    }
     await this.updateEntity(ctx, {
       id: response.id,
       values,
     });
+
+    if (!questions?.length || !page) {
+      await ctx.call('sessions.finish', {
+        id: response.session.id,
+      });
+
+      return {
+        nextResponse: null,
+      };
+    }
 
     let nextResponse: Response = await this.findEntity(ctx, {
       query: {
@@ -319,17 +308,12 @@ export default class ResponsesService extends moleculer.Service {
         session: response.session.id,
         page,
         questions,
-        values: nextPageValues,
         previousResponse: response.id,
       });
     } else {
       await this.updateEntity(ctx, {
         id: nextResponse.id,
         questions,
-        values: {
-          ...nextResponse.values,
-          ...nextPageValues,
-        },
         previousResponse: response.id,
       });
     }
