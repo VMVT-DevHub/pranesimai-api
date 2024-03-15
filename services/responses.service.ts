@@ -152,12 +152,9 @@ export default class ResponsesService extends moleculer.Service {
 
     const { values } = ctx.params;
     const errors: Record<string | number, string> = {};
-    let nextQuestionsIds: Array<Question['id']> = [];
+    const nextQuestionsIds: Array<Question['id']> = [];
 
     for (const question of response.questions) {
-      // reset next questions array, so only last question decides next page question(s)
-      nextQuestionsIds = [];
-
       if (question.nextQuestion) {
         nextQuestionsIds.push(question.nextQuestion);
       }
@@ -242,8 +239,14 @@ export default class ResponsesService extends moleculer.Service {
     const questions: Array<Question['id']> = [];
 
     if (nextQuestionsIds.length) {
+      const nextQuestionsIdsOfNextPage = nextQuestionsIds
+        // unique
+        .filter((item, index) => nextQuestionsIds.indexOf(item) === index)
+        // remove from current page
+        .filter((id) => !response.questions.some((q) => q.id === id));
+
       const nextQuestions: Question[] = await ctx.call('questions.resolve', {
-        id: nextQuestionsIds,
+        id: nextQuestionsIdsOfNextPage,
       });
 
       if (nextQuestions.length) {
@@ -275,7 +278,7 @@ export default class ResponsesService extends moleculer.Service {
           }
         }
 
-        for (const questionId of nextQuestionsIds) {
+        for (const questionId of nextQuestionsIdsOfNextPage) {
           traverseNextQuestions(questionId);
         }
       }

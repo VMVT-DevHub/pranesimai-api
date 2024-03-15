@@ -490,7 +490,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
     authType: SurveyAuthType.OPTIONAL,
     pages: [
       // =======================================
-      pages.kontaktiniai(5),
+      pages.kontaktiniai(4),
 
       // =======================================
       {
@@ -694,12 +694,12 @@ const SURVEYS_SEED: SurveyTemplate[] = [
   // SURVEY 4
   {
     title: 'Maisto sukeltų protrukių pranešimas',
-    description: '',
+    description: 'TODO',
     icon: FAKE_ICON,
     authType: SurveyAuthType.OPTIONAL,
     pages: [
       // =======================================
-      pages.kontaktiniai(4),
+      pages.kontaktiniai(3),
 
       // =======================================
       {
@@ -896,7 +896,8 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 export default class SeedService extends moleculer.Service {
   @Method
   async seedSurveys(surveys: SurveyTemplate[]) {
-    for (const { pages, ...surveyData } of surveys) {
+    for (const surveyItem of surveys) {
+      const { pages, ...surveyData } = surveyItem;
       const questionByExcelId: Record<string, Partial<Question<'options'>>> = {};
       let firstPage: Page['id'];
 
@@ -912,15 +913,12 @@ export default class SeedService extends moleculer.Service {
 
         firstPage ||= page.id;
 
-        for (const {
-          options,
-          id: excelId,
-          nextQuestion,
-          condition,
-          ...questionData
-        } of questions) {
+        for (const item of questions) {
+          const { options, id: excelId, nextQuestion, condition, ...questionData } = item;
+
           const question: Question = await this.broker.call('questions.create', {
             ...questionData,
+            priority: questions.length - questions.indexOf(item),
             page: page.id,
           });
 
@@ -931,6 +929,7 @@ export default class SeedService extends moleculer.Service {
       // 2 - second step: create survey
       const survey: Survey = await this.broker.call('surveys.create', {
         ...surveyData,
+        priority: surveys.length - surveys.indexOf(surveyItem),
         firstPage,
       });
 
@@ -954,13 +953,15 @@ export default class SeedService extends moleculer.Service {
           });
 
           question.options = [];
-          for (const { nextQuestion, ...optionData } of options) {
+          for (const optionItem of options) {
+            const { nextQuestion, ...optionData } = optionItem;
             if (nextQuestion && !questionByExcelId[nextQuestion]) {
               console.error(nextQuestion, survey, excelId);
             }
             const option: QuestionOption = await this.broker.call('questionOptions.create', {
               ...optionData,
               question: question.id,
+              priority: options.length - options.indexOf(optionItem),
               nextQuestion: nextQuestion ? questionByExcelId[nextQuestion].id : undefined,
             });
 
