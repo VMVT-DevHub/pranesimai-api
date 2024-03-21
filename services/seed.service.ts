@@ -9,12 +9,12 @@ import { QuestionOption } from './questionOptions.service';
 
 type SurveyTemplate = {
   title: Survey['title'];
-  description: Survey['description'];
+  description?: Survey['description'];
   icon: Survey['icon'];
   authType: SurveyAuthType;
   pages: Array<{
     title: Page['title'];
-    description: Page['description'];
+    description?: Page['description'];
     questions?: Array<{
       id: string; // excel id
       nextQuestion?: string; // excel id
@@ -66,6 +66,7 @@ type TypeFactory = (
 
 q.input = q.bind(null, QuestionType.INPUT) as TypeFactory;
 q.date = q.bind(null, QuestionType.DATE) as TypeFactory;
+q.datetime = q.bind(null, QuestionType.DATETIME) as TypeFactory;
 q.select = q.bind(null, QuestionType.SELECT) as TypeFactory;
 q.multiselect = q.bind(null, QuestionType.MULTISELECT) as TypeFactory;
 q.radio = q.bind(null, QuestionType.RADIO) as TypeFactory;
@@ -128,7 +129,6 @@ const pages = {
 
   papildoma: () => ({
     title: 'Papildoma informacija',
-    description: 'TODO',
   }),
 
   informacija: (
@@ -161,7 +161,6 @@ const pages = {
     additionalQuestinos: SurveyTemplateQuestion[] = [],
   ) => ({
     title: 'Įvykio aplinkybės',
-    description: 'TODO',
     questions: [
       q.text(
         id,
@@ -209,15 +208,17 @@ const pages = {
   }),
 };
 
-const FAKE_ICON =
-  '<svg aria-hidden="true" focusable="false" class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1em" height="1em"><!-- Font Awesome Free 5.15.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) --><path d="M493.4 24.6l-104-24c-11.3-2.6-22.9 3.3-27.5 13.9l-48 112c-4.2 9.8-1.4 21.3 6.9 28l60.6 49.6c-36 76.7-98.9 140.5-177.2 177.2l-49.6-60.6c-6.8-8.3-18.2-11.1-28-6.9l-112 48C3.9 366.5-2 378.1.6 389.4l24 104C27.1 504.2 36.7 512 48 512c256.1 0 464-207.5 464-464 0-11.2-7.7-20.9-18.6-23.4z"/></svg>';
-
 const SURVEYS_SEED: SurveyTemplate[] = [
   // SURVEY 1
   {
     title: 'Maisto srities pranešimų anketa',
-    description: 'TODO: Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-    icon: FAKE_ICON,
+    icon: `<svg viewBox="0 0 55 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M11.0167 29.4973L24.0442 22.2748C28.2967 19.9123 34.8217 26.2798 32.3917 30.6223L25.1467 43.6948C20.4667 52.1098 2.44418 34.2673 11.0167 29.4973Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M24.292 21.375L22.042 16.2225C21.367 14.58 20.467 13.5 18.667 13.5H10.792C6.94449 13.5 5.16699 14.625 5.16699 19.125C5.35564 23.161 6.94719 27.0046 9.66699 29.9925" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.667 13.5C18.667 10.0125 19.207 4.5 14.167 4.5C9.66699 4.5 8.54199 9.3825 8.54199 13.5" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M33.2923 30.375L38.4448 32.625C40.0873 33.3 41.1673 34.2 41.1673 36V43.875C41.1673 47.7225 40.0423 49.5 35.5423 49.5C31.5063 49.3113 27.6627 47.7198 24.6748 45" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M41.167 36.0002C44.6545 36.0002 50.167 35.4602 50.167 40.5002C50.167 45.0002 45.2845 46.1252 41.167 46.1252" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`,
     authType: SurveyAuthType.OPTIONAL,
     pages: [
       // =======================================
@@ -397,8 +398,11 @@ const SURVEYS_SEED: SurveyTemplate[] = [
   // SURVEY 2
   {
     title: 'Pašarų ar veterinarijos vaistų pranešimas',
-    description: 'TODO: Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
-    icon: FAKE_ICON,
+    icon: `<svg viewBox="0 0 55 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M23.6253 46.1248L46.1253 23.6248C47.1766 22.5944 48.0133 21.3659 48.5869 20.0102C49.1605 18.6545 49.4597 17.1985 49.4672 15.7265C49.4746 14.2544 49.1901 12.7955 48.6302 11.4341C48.0703 10.0726 47.2461 8.83572 46.2052 7.79481C45.1643 6.75391 43.9274 5.92967 42.5659 5.36978C41.2045 4.80988 39.7456 4.52542 38.2736 4.53286C36.8015 4.54029 35.3455 4.83947 33.9898 5.41309C32.6341 5.98671 31.4056 6.8234 30.3753 7.87476L7.87525 30.3748C6.82389 31.4051 5.9872 32.6336 5.41358 33.9893C4.83996 35.345 4.54078 36.801 4.53335 38.2731C4.52591 39.7451 4.81037 41.204 5.37026 42.5655C5.93016 43.9269 6.75439 45.1638 7.7953 46.2047C8.83621 47.2456 10.0731 48.0699 11.4346 48.6298C12.796 49.1897 14.2549 49.4741 15.727 49.4667C17.199 49.4592 18.655 49.1601 20.0107 48.5864C21.3664 48.0128 22.5949 47.1761 23.6253 46.1248Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M19.125 19.125L34.875 34.875" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+    `,
     authType: SurveyAuthType.OPTIONAL,
     pages: [
       // =======================================
@@ -485,12 +489,16 @@ const SURVEYS_SEED: SurveyTemplate[] = [
   // SURVEY 3
   {
     title: 'Veterinarinės srities pranešimų',
-    description: 'TODO',
-    icon: FAKE_ICON,
+    icon: `<svg viewBox="0 0 55 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M25.084 13.5C27.5693 13.5 29.584 11.4853 29.584 9C29.584 6.51472 27.5693 4.5 25.084 4.5C22.5987 4.5 20.584 6.51472 20.584 9C20.584 11.4853 22.5987 13.5 25.084 13.5Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M40.834 22.5C43.3193 22.5 45.334 20.4853 45.334 18C45.334 15.5147 43.3193 13.5 40.834 13.5C38.3487 13.5 36.334 15.5147 36.334 18C36.334 20.4853 38.3487 22.5 40.834 22.5Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M45.334 40.5C47.8193 40.5 49.834 38.4853 49.834 36C49.834 33.5147 47.8193 31.5 45.334 31.5C42.8487 31.5 40.834 33.5147 40.834 36C40.834 38.4853 42.8487 40.5 45.334 40.5Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M20.5839 22.5C22.0613 22.5 23.5242 22.791 24.8891 23.3564C26.254 23.9217 27.4942 24.7504 28.5389 25.795C29.5835 26.8397 30.4122 28.0799 30.9776 29.4448C31.5429 30.8097 31.8339 32.2726 31.8339 33.75V41.625C31.8333 43.507 31.1587 45.3266 29.9323 46.7542C28.7058 48.1818 27.0087 49.1229 25.1482 49.4071C23.2878 49.6914 21.3871 49.2999 19.7903 48.3036C18.1936 47.3074 17.0064 45.7723 16.4439 43.9763C15.4839 40.8788 13.4589 38.85 10.3689 37.89C8.57382 37.3278 7.03928 36.1415 6.04297 34.546C5.04666 32.9504 4.65439 31.0509 4.93715 29.1912C5.21992 27.3315 6.15903 25.6345 7.58455 24.4071C9.01007 23.1798 10.8278 22.5033 12.7089 22.5H20.5839Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`,
     authType: SurveyAuthType.OPTIONAL,
     pages: [
       // =======================================
-      pages.kontaktiniai(5),
+      pages.kontaktiniai(4),
 
       // =======================================
       {
@@ -694,19 +702,24 @@ const SURVEYS_SEED: SurveyTemplate[] = [
   // SURVEY 4
   {
     title: 'Maisto sukeltų protrukių pranešimas',
-    description: '',
-    icon: FAKE_ICON,
+    icon: `<svg viewBox="0 0 55 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M16.417 47.25H38.917" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.667 47.25C33.0376 47.25 38.1883 45.1165 41.9859 41.3189C45.7835 37.5213 47.917 32.3706 47.917 27H7.41699C7.41699 32.3706 9.55047 37.5213 13.3481 41.3189C17.1457 45.1165 22.2964 47.25 27.667 47.25Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.2716 26.9998C24.9089 27.0125 23.5918 26.5095 22.5845 25.5917C21.5772 24.674 20.9541 23.4093 20.8402 22.0513C20.7263 20.6933 21.1301 19.3425 21.9705 18.2698C22.8109 17.197 24.0259 16.4817 25.3716 16.2673C25.1562 15.3138 25.2036 14.3197 25.5088 13.3911C25.814 12.4624 26.3655 11.634 27.1046 10.9942C27.8437 10.3545 28.7426 9.9273 29.7054 9.75834C30.6682 9.58937 31.6589 9.68492 32.5716 10.0348C32.9713 9.40562 33.4969 8.866 34.1154 8.44991C34.7338 8.03381 35.4317 7.75026 36.1651 7.61711C36.8985 7.48396 37.6515 7.50408 38.3768 7.67622C39.102 7.84835 39.7838 8.16878 40.3791 8.61731C41.4176 7.80106 42.7193 7.39377 44.0379 7.4725C45.3564 7.55122 46.6004 8.1105 47.5344 9.04452C48.4684 9.97854 49.0277 11.2225 49.1064 12.5411C49.1852 13.8596 48.7779 15.1613 47.9616 16.1998C48.4697 16.8747 48.8123 17.6593 48.962 18.4906C49.1117 19.3219 49.0643 20.1768 48.8236 20.9865C48.5829 21.7962 48.1556 22.5381 47.576 23.1526C46.9965 23.7671 46.2808 24.2371 45.4866 24.5248C45.6919 25.3347 45.715 26.18 45.5541 26.9998" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M29.917 27L38.917 18" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M25.1921 16.3125C23.958 14.9969 22.3561 14.0836 20.5953 13.6916C18.8345 13.2996 16.9965 13.4471 15.3208 14.115C13.645 14.7828 12.2094 15.94 11.2009 17.4357C10.1925 18.9314 9.65797 20.6962 9.66711 22.5C9.66711 24.1425 10.1171 25.6725 10.8821 27" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`,
     authType: SurveyAuthType.OPTIONAL,
     pages: [
       // =======================================
-      pages.kontaktiniai(4),
+      pages.kontaktiniai(3),
 
       // =======================================
       {
         ...pages.detales(),
         questions: [
           q.date(4, 5, 'Nurodykite pranešamo įvykio datą'),
-          q.date(
+          q.datetime(
             5,
             6,
             'Nurodykite produkto sukėlusio sveikatos sutrikimus vartojimo datą ir laiką',
@@ -714,7 +727,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               riskEvaluation: false,
             },
           ),
-          q.date(6, 7, 'Nurodykite pirmųjų simptomų pasireiškimo datą ir laiką'),
+          q.datetime(6, 7, 'Nurodykite pirmųjų simptomų pasireiškimo datą ir laiką'),
           q.text(7, 8, 'Nurodykite pasireiškusius simptomus'),
           q.radio(8, 9, 'Ar maistas buvo vartojamas organizuotame renginyje?', {
             options: o(['Taip', 'Ne']),
@@ -787,8 +800,10 @@ const SURVEYS_SEED: SurveyTemplate[] = [
   // SURVEY 5
   {
     title: 'Viešai tiekiamo geriamojo vande',
-    description: 'TODO',
-    icon: FAKE_ICON,
+    icon: `<svg viewBox="0 0 55 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M34.2 49.5H19.8C18.6841 49.5062 17.6056 49.0975 16.7741 48.3532C15.9425 47.609 15.4172 46.5823 15.3 45.4725L11.25 6.75H42.75L38.6775 45.4725C38.5607 46.5784 38.0386 47.6019 37.2118 48.3457C36.385 49.0894 35.3121 49.5006 34.2 49.5Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M13.5 27C15.4473 25.5395 17.8158 24.75 20.25 24.75C22.6842 24.75 25.0527 25.5395 27 27C28.9473 28.4605 31.3158 29.25 33.75 29.25C36.1842 29.25 38.5527 28.4605 40.5 27" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`,
     authType: SurveyAuthType.REQUIRED,
     pages: [
       // =======================================
@@ -826,8 +841,24 @@ const SURVEYS_SEED: SurveyTemplate[] = [
   // SURVEY 6
   {
     title: 'Rastų gaišenų pranešimai',
-    description: 'TODO',
-    icon: FAKE_ICON,
+    icon: `<svg viewBox="0 0 55 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M15.3418 49.5V43.4925C15.3418 40.32 16.6018 37.26 18.8518 35.01C21.1018 32.76 24.1618 31.5 27.3343 31.5C33.9718 31.5 39.3268 36.8775 39.3268 43.4925V49.5H15.3418Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M44.5918 38.9927V34.4927" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M4.83398 49.5001H15.3415V44.2576L4.83398 39.0151V49.5226V49.5001Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M18.8518 35.01L15.3418 31.5L18.3343 28.5075L16.8268 27" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M15.3418 49.4999C15.3418 47.9024 15.9718 46.3724 17.0968 45.2474C18.2218 44.1224 19.7518 43.4924 21.3268 43.4924C21.3268 40.1849 24.0043 37.4849 27.3343 37.4849C33.9493 37.4849 39.3268 42.8624 39.3268 49.4774H15.3193L15.3418 49.4999Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M49.8336 44.2576C49.8336 41.3551 47.4936 39.0151 44.5911 39.0151C41.6886 39.0151 39.3486 41.3551 39.3486 44.2576V49.5001H44.5911C47.4936 49.5001 49.8336 47.1601 49.8336 44.2576Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M30.1243 19.3277L39.7318 23.5352C42.9268 24.9302 46.6393 23.4677 48.0343 20.2952C49.4293 17.1002 47.9668 13.3877 44.7943 11.9927L35.1868 7.78517C31.9918 6.39017 28.2793 7.85267 26.8843 11.0252C25.4893 14.2202 26.9518 17.9327 30.1243 19.3277Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M42.2736 17.7524C41.1261 15.8399 39.2586 15.1874 37.0761 15.6374C35.1411 16.0424 33.5886 15.2099 32.6436 13.5449" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M26.8612 11.025L24.1387 9.85498" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M27.2661 16.8525L24.7461 18.405" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M43.4893 23.9399L44.0743 26.8424" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M48.0342 20.2725L50.7567 21.465" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M47.6289 14.4675L50.1714 12.915" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M31.4063 7.38008L30.8213 4.45508" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M34.9161 21.4873L33.7236 24.2098" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M39.9561 9.78744L41.1486 7.06494" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`,
     authType: SurveyAuthType.NONE,
     pages: [
       // =======================================
@@ -896,31 +927,23 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 export default class SeedService extends moleculer.Service {
   @Method
   async seedSurveys(surveys: SurveyTemplate[]) {
-    for (const { pages, ...surveyData } of surveys) {
+    for (const surveyItem of surveys) {
+      const { pages, ...surveyData } = surveyItem;
       const questionByExcelId: Record<string, Partial<Question<'options'>>> = {};
       let firstPage: Page['id'];
 
       // 1 - first step: create pages with partial questions
-      for (const [index, { questions = [], ...pageData }] of Object.entries(pages)) {
-        const page: Page = await this.broker.call('pages.create', <Partial<Page>>{
-          ...pageData,
-          progress: {
-            current: Number(index) + 1,
-            total: pages.length,
-          },
-        });
+      for (const { questions = [], ...pageData } of pages) {
+        const page: Page = await this.broker.call('pages.create', pageData);
 
         firstPage ||= page.id;
 
-        for (const {
-          options,
-          id: excelId,
-          nextQuestion,
-          condition,
-          ...questionData
-        } of questions) {
+        for (const item of questions) {
+          const { options, id: excelId, nextQuestion, condition, ...questionData } = item;
+
           const question: Question = await this.broker.call('questions.create', {
             ...questionData,
+            priority: questions.length - questions.indexOf(item),
             page: page.id,
           });
 
@@ -931,6 +954,7 @@ export default class SeedService extends moleculer.Service {
       // 2 - second step: create survey
       const survey: Survey = await this.broker.call('surveys.create', {
         ...surveyData,
+        priority: surveys.length - surveys.indexOf(surveyItem),
         firstPage,
       });
 
@@ -954,13 +978,15 @@ export default class SeedService extends moleculer.Service {
           });
 
           question.options = [];
-          for (const { nextQuestion, ...optionData } of options) {
+          for (const optionItem of options) {
+            const { nextQuestion, ...optionData } = optionItem;
             if (nextQuestion && !questionByExcelId[nextQuestion]) {
               console.error(nextQuestion, survey, excelId);
             }
             const option: QuestionOption = await this.broker.call('questionOptions.create', {
               ...optionData,
               question: question.id,
+              priority: options.length - options.indexOf(optionItem),
               nextQuestion: nextQuestion ? questionByExcelId[nextQuestion].id : undefined,
             });
 

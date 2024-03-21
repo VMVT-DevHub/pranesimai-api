@@ -17,10 +17,6 @@ import { Question } from './questions.service';
 interface Fields extends CommonFields {
   title: string;
   description: string;
-  progress: {
-    current: number;
-    total: number;
-  };
   questions: undefined;
 }
 
@@ -52,13 +48,6 @@ export type Page<
 
       title: 'string',
       description: 'string',
-      progress: {
-        type: 'object',
-        properties: {
-          current: 'number',
-          total: 'number',
-        },
-      },
 
       questions: {
         type: 'array',

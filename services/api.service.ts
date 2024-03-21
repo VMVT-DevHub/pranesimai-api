@@ -6,7 +6,7 @@ import { EndpointType } from '../types';
 import { Session } from './sessions.service';
 
 export interface MetaSession {
-  session: Session;
+  session?: Session;
 }
 
 export enum RestrictionType {
@@ -123,12 +123,6 @@ export default class ApiService extends moleculer.Service {
 
   @Method
   async authenticate(ctx: Context<unknown, MetaSession>, _route: Route, req: IncomingRequest) {
-    const restrictionType = this.getRestrictionType(req);
-
-    if (restrictionType === RestrictionType.PUBLIC) {
-      return;
-    }
-
     const cookies = cookie.parse(req.headers.cookie || '');
     if (!cookies['vmvt-session-token']) {
       return;
