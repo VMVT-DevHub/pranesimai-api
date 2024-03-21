@@ -25,6 +25,7 @@ interface Fields extends CommonFields {
   description: string;
   hint: string;
   icon: string;
+  priority: number;
   data?: DataAuthOption;
 }
 
@@ -81,6 +82,10 @@ export type QuestionOption<
       hint: 'string',
       icon: 'string',
       data: 'any',
+      priority: {
+        type: 'number',
+        default: 0,
+      },
 
       ...COMMON_FIELDS,
     },

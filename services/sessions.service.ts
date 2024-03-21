@@ -2,7 +2,7 @@
 
 import cookie from 'cookie';
 import crypto from 'crypto';
-import moleculer, { Context, Errors } from 'moleculer';
+import moleculer, { Context } from 'moleculer';
 import { Action, Method, Service } from 'moleculer-decorators';
 import DbConnection from '../mixins/database.mixin';
 import { Survey, SurveyAuthType } from './surveys.service';
@@ -16,9 +16,8 @@ import {
   Table,
   ResponseHeadersMeta,
 } from '../types';
-import { Response } from './responses.service';
+import { Response, TraverseGraphResponse } from './responses.service';
 import { MetaSession, RestrictionType } from './api.service';
-import { AuthRelation, Question } from './questions.service';
 
 interface Fields extends CommonFields {
   token: string;
@@ -176,7 +175,7 @@ export default class SessionsService extends moleculer.Service {
 
   @Method
   async startSurvey(
-    ctx: Context<unknown, ResponseHeadersMeta>,
+    ctx: Context<unknown, ResponseHeadersMeta & MetaSession>,
     id: Survey['id'],
     auth: Session['auth'],
     email?: Session['email'],
@@ -188,18 +187,33 @@ export default class SessionsService extends moleculer.Service {
       throwIfNotExist: true,
     });
 
-    let firstPage = survey.firstPage;
-    let questions = firstPage.questions;
+    const { questions, page }: TraverseGraphResponse = await ctx.call(
+      'responses.traverseQuestionsGraph',
+      {
+        startingQuestions: survey.firstPage.questions.map((q) => q.id),
+        skipAuthQuestions: !auth,
+      },
+    );
 
-    const token = crypto.randomBytes(64).toString('hex');
+    let session: Session;
 
-    const session: Session = await this.createEntity(ctx, {
-      survey: survey.id,
-      auth,
-      email,
-      phone,
-      token,
-    });
+    if (ctx.meta.session?.id) {
+      session = await this.updateEntity(ctx, {
+        id: ctx.meta.session.id,
+        survey: survey.id,
+        auth,
+        email,
+        phone,
+      });
+    } else {
+      session = await this.createEntity(ctx, {
+        survey: survey.id,
+        auth,
+        email,
+        phone,
+        token: crypto.randomBytes(64).toString('hex'),
+      });
+    }
 
     ctx.meta.$responseHeaders = {
       'Set-Cookie': cookie.serialize('vmvt-session-token', session.token, {
@@ -208,44 +222,26 @@ export default class SessionsService extends moleculer.Service {
         maxAge: 60 * 60 * 24 * 7, // 1 week
       }),
     };
-    const values: Response['values'] = {};
 
-    if (auth) {
-      questions.forEach((question) => {
-        if (question.authRelation) {
-          switch (question.authRelation) {
-            case AuthRelation.EMAIL:
-              values[question.id] = email;
-              break;
+    let lastResponse: Response = await ctx.call('responses.findOne', {
+      query: {
+        session: session.id,
+        page,
+      },
+    });
 
-            case AuthRelation.PHONE:
-              values[question.id] = phone;
-              break;
-          }
-        }
+    if (lastResponse) {
+      lastResponse = await ctx.call('responses.update', {
+        id: lastResponse.id,
+        questions,
       });
     } else {
-      questions = questions.filter((q) => !q.authRelation);
-
-      if (!questions.length) {
-        const lastQuestion = firstPage.questions[firstPage.questions.length - 1];
-
-        const nextQuestion: Question<'page'> = await ctx.call('questions.resolve', {
-          id: lastQuestion.nextQuestion,
-          populate: 'page',
-        });
-
-        firstPage = nextQuestion.page;
-        questions = nextQuestion.page.questions;
-      }
+      lastResponse = await ctx.call('responses.create', {
+        session: session.id,
+        page,
+        questions,
+      });
     }
-
-    const lastResponse: Response = await ctx.call('responses.create', {
-      session: session.id,
-      page: firstPage.id,
-      questions: questions.map((question) => question.id),
-      values,
-    });
 
     await this.updateEntity(ctx, {
       id: session.id,
@@ -262,10 +258,12 @@ export default class SessionsService extends moleculer.Service {
     },
   })
   async finish(ctx: Context<{ id: Session['id'] }, ResponseHeadersMeta>) {
-    await this.updateEntity(ctx, {
+    const session = await this.updateEntity(ctx, {
       id: ctx.params.id,
       finishedAt: new Date(),
     });
+
+    ctx.emit('sessions.finished', session);
 
     this.removeCookie(ctx);
   }

@@ -4,7 +4,7 @@ import moleculer, { Context } from 'moleculer';
 import { Action, Method, Service } from 'moleculer-decorators';
 import DbConnection from '../mixins/database.mixin';
 import { Session } from './sessions.service';
-import { Question, QuestionType } from './questions.service';
+import { AuthRelation, Question, QuestionType } from './questions.service';
 
 import {
   CommonFields,
@@ -24,6 +24,10 @@ interface Fields extends CommonFields {
   previousResponse: Response['id'];
   questions: Array<Question['id']>;
   values: Record<Question['id'], any>;
+  progress: {
+    current: number;
+    total: number;
+  };
 }
 
 interface Populates extends CommonPopulates {
@@ -31,6 +35,12 @@ interface Populates extends CommonPopulates {
   page: Page;
   previousResponse: Response;
   questions: Array<Question<'options'>>;
+}
+
+export interface TraverseGraphResponse {
+  questions: Array<Question['id']>;
+  nextPageQuestions: Array<Question['id']>;
+  page: Page['id'];
 }
 
 export type Response<
@@ -97,7 +107,104 @@ export type Response<
 
       values: {
         type: 'object',
-        default: () => ({}),
+        async onCreate({
+          ctx,
+          value,
+          params,
+        }: {
+          ctx: Context;
+          value: Response['values'];
+          params: Partial<Response>;
+        }) {
+          if (value) {
+            return value;
+          }
+
+          value = {};
+
+          if (params.questions?.length && params.page && params.session) {
+            const session: Session = await ctx.call('sessions.resolve', {
+              id: params.session,
+            });
+
+            if (session?.auth) {
+              const page: Page<'questions'> = await ctx.call('pages.resolve', {
+                id: params.page,
+                populate: 'questions',
+              });
+
+              for (const qId of params.questions) {
+                const question = page.questions.find((q) => q.id === qId);
+
+                if (question.authRelation) {
+                  if (question.authRelation) {
+                    switch (question.authRelation) {
+                      case AuthRelation.EMAIL:
+                        value[question.id] = session.email;
+                        break;
+
+                      case AuthRelation.PHONE:
+                        value[question.id] = session.phone;
+                        break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          return value;
+        },
+      },
+
+      progress: {
+        type: 'object',
+        properties: {
+          current: 'number',
+          total: 'number',
+        },
+        async set({ ctx, params }: { ctx: Context; params: Partial<Response> }) {
+          let skipAuthQuestions = false;
+          let sessionId: Session['id'] = params.session;
+
+          if (!sessionId && params.id) {
+            const entity: Response = await this.resolveEntities(ctx, { id: params.id });
+            sessionId = entity.session;
+          }
+
+          if (sessionId) {
+            const session: Session = await ctx.call('sessions.resolve', { id: sessionId });
+            skipAuthQuestions = !session.auth;
+          }
+
+          if (params.questions) {
+            let current = 1;
+            if (params.previousResponse) {
+              const previousResponse: Response = await ctx.call('responses.resolve', {
+                id: params.previousResponse,
+              });
+
+              current = previousResponse.progress.current + 1;
+            }
+
+            let total = current - 1;
+            let startingQuestions = params.questions;
+
+            do {
+              total++;
+
+              const { nextPageQuestions }: TraverseGraphResponse =
+                await this.actions.traverseQuestionsGraph({
+                  startingQuestions,
+                  skipAuthQuestions,
+                });
+
+              startingQuestions = nextPageQuestions;
+            } while (startingQuestions.length && total < 999);
+
+            return { current, total };
+          }
+        },
       },
 
       ...COMMON_FIELDS,
@@ -152,22 +259,16 @@ export default class ResponsesService extends moleculer.Service {
 
     const { values } = ctx.params;
     const errors: Record<string | number, string> = {};
-    let nextQuestionsIds: Array<Question['id']> = [];
 
     for (const question of response.questions) {
-      // reset next questions array, so only last question decides next page question(s)
-      nextQuestionsIds = [];
-
-      if (question.nextQuestion) {
-        nextQuestionsIds.push(question.nextQuestion);
-      }
-
       const value = values[question.id];
 
       if (!value) {
         if (
           question.required &&
-          (!question.condition || values[question.condition.question] === question.condition.value)
+          (!question.condition ||
+            values[question.condition.question] === question.condition.value ||
+            values[question.condition.question]?.includes?.(question.condition.value))
         ) {
           errors[question.id] = 'REQUIRED';
         }
@@ -183,12 +284,8 @@ export default class ResponsesService extends moleculer.Service {
           option = question.options.find((o) => o.id === value);
 
           if (!option) {
-            errors[question.id] = 'OPTION';
+            errors[question.id] = 'OPTION: ' + question.options.map((o) => o.id).join(', ');
             break;
-          }
-
-          if (option.nextQuestion) {
-            nextQuestionsIds.push(option.nextQuestion);
           }
 
           break;
@@ -202,18 +299,14 @@ export default class ResponsesService extends moleculer.Service {
 
         case QuestionType.MULTISELECT:
           if (!Array.isArray(value)) {
-            errors[question.id] = 'ARRAY';
+            errors[question.id] = 'ARRAY: ' + question.options.map((o) => o.id).join(', ');
           } else {
             for (const item of value) {
               option = question.options.find((o) => o.id === item);
 
               if (!option) {
-                errors[question.id] = 'OPTION';
+                errors[question.id] = 'OPTION: ' + question.options.map((o) => o.id).join(', ');
                 break;
-              }
-
-              if (option.nextQuestion) {
-                nextQuestionsIds.push(option.nextQuestion);
               }
             }
           }
@@ -221,15 +314,32 @@ export default class ResponsesService extends moleculer.Service {
           break;
 
         case QuestionType.FILES:
-          // TODO
+          if (!Array.isArray(value)) {
+            errors[question.id] = 'FILES must be array';
+          } else {
+            for (const item of value) {
+              if (!item.url) {
+                errors[question.id] = 'FILES item must have url property';
+              }
+            }
+          }
+
           break;
 
         case QuestionType.EMAIL:
-          // TODO
+          if (
+            !/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
+              String(value).toLowerCase(),
+            )
+          ) {
+            errors[question.id] = 'EMAIL';
+          }
           break;
 
         case QuestionType.LOCATION:
-          // TODO
+          if (!value?.features?.[0]?.geometry?.coordinates) {
+            errors[question.id] = 'LOCATION';
+          }
           break;
       }
     }
@@ -238,47 +348,19 @@ export default class ResponsesService extends moleculer.Service {
       return { errors };
     }
 
+    const { nextPageQuestions }: TraverseGraphResponse = await this.actions.traverseQuestionsGraph({
+      startingQuestions: response.questions.map((q) => q.id),
+      values,
+    });
+
+    let questions: Array<Question['id']> = [];
     let page: Page['id'];
-    const questions: Array<Question['id']> = [];
 
-    if (nextQuestionsIds.length) {
-      const nextQuestions: Question[] = await ctx.call('questions.resolve', {
-        id: nextQuestionsIds,
-      });
-
-      if (nextQuestions.length) {
-        // TODO: must be the same page on all questions, if not - log error in database
-        page = nextQuestions[0].page;
-
-        const { questions: pageQuestions }: Page<'questions'> = await ctx.call('pages.resolve', {
-          id: page,
-          populate: 'questions',
-        });
-
-        // TODO: infinity loop possible if database has error
-        function traverseNextQuestions(questionId: Question['id']) {
-          const question = pageQuestions.find((q) => q.id === questionId);
-          if (!question) return;
-
-          questions.push(questionId);
-
-          if (question.nextQuestion) {
-            traverseNextQuestions(question.nextQuestion);
-          }
-
-          if (question.options?.length) {
-            for (const option of question.options) {
-              if (option.nextQuestion) {
-                traverseNextQuestions(option.nextQuestion);
-              }
-            }
-          }
-        }
-
-        for (const questionId of nextQuestionsIds) {
-          traverseNextQuestions(questionId);
-        }
-      }
+    if (nextPageQuestions.length) {
+      ({ questions, page } = await this.actions.traverseQuestionsGraph({
+        startingQuestions: nextPageQuestions,
+        skipAuthQuestions: !response.session.auth,
+      }));
     }
 
     await this.updateEntity(ctx, {
@@ -286,7 +368,7 @@ export default class ResponsesService extends moleculer.Service {
       values,
     });
 
-    if (!questions?.length || !page) {
+    if (!questions.length || !page) {
       await ctx.call('sessions.finish', {
         id: response.session.id,
       });
@@ -325,6 +407,132 @@ export default class ResponsesService extends moleculer.Service {
 
     return {
       nextResponse: nextResponse.id,
+    };
+  }
+
+  /**
+   * Usecases:
+   * 1) responding to page questions. Questions of the next page needed, depending on provided values.
+   * 2) estimating progress of the page. Giving current page with relevant questions we need to estimate next pages possible.
+   * 3) starting session usually is simple - all questions of the first page.
+   *    However, in case of auth=false we eliminate all auth questions and page migth get empty, this method helps detecting next page.
+   */
+  @Action({
+    params: {
+      startingQuestions: {
+        type: 'array',
+        items: 'number',
+      },
+      values: 'object|optional',
+      skipAuthQuestions: 'boolean|optional',
+    },
+  })
+  async traverseQuestionsGraph(
+    ctx: Context<{
+      startingQuestions: Array<Question['id']>;
+      values?: Response['values'];
+      skipAuthQuestions?: boolean;
+    }>,
+  ) {
+    const { startingQuestions, values, skipAuthQuestions } = ctx.params;
+
+    // startingQuestions should be from the same page, we do not handle cases when it's not
+    const question: Question = await ctx.call('questions.resolve', { id: startingQuestions[0] });
+    const pageId = question.page;
+
+    const page: Page<'questions'> = await ctx.call('pages.resolve', {
+      id: pageId,
+      populate: 'questions',
+    });
+
+    const pageQuestions = this.traversePageQuestions(startingQuestions, page.questions, values);
+
+    const nextPageQuestions = pageQuestions.nextPageQuestions;
+    let questions = pageQuestions.questions;
+
+    if (skipAuthQuestions) {
+      questions = questions.filter((questionId) => {
+        const question = page.questions.find((q) => q.id === questionId);
+
+        if (!question) return false;
+        if (question.authRelation) return false;
+        return true;
+      });
+    }
+
+    if (!questions.length && nextPageQuestions.length) {
+      return this.actions.traverseQuestionsGraph({
+        startingQuestions: nextPageQuestions,
+        values,
+        skipAuthQuestions,
+      });
+    }
+
+    return { questions, nextPageQuestions, page: pageId };
+  }
+
+  @Method
+  traversePageQuestions(
+    startingQuestions: Array<Question['id']>,
+    localQuestions: Array<Question<'options'>>,
+    values?: Response['values'],
+  ) {
+    const questions = new Set<Question['id']>();
+    const nextPageQuestions = new Set<Question['id']>();
+
+    function handle(questionId?: Question['id']) {
+      if (!questionId) return;
+
+      const local = localQuestions.find((q) => q.id === questionId);
+
+      // skip question if conditional and does not satisfy condition (only when values provided)
+      if (
+        values &&
+        local &&
+        local.condition &&
+        values[local.condition.question] !== local.condition.value
+      )
+        return;
+
+      if (local) {
+        questions.add(questionId);
+
+        // call recursion with nextQuestion on current
+        handle(local.nextQuestion);
+
+        // if question with options, continue nextQuestion by option
+        if (
+          [QuestionType.SELECT, QuestionType.MULTISELECT, QuestionType.RADIO].includes(local.type)
+        ) {
+          if (!values) {
+            // if no values provided - continue recursion with all options nextQuestion
+            local.options?.forEach((option) => handle(option.nextQuestion));
+          } else if (values[local.id]) {
+            if (QuestionType.MULTISELECT === local.type) {
+              // for multiselect continue recursion with all values selected
+              local.options
+                .filter((option) => values[local.id]?.includes(option.id))
+                .forEach((option) => handle(option.nextQuestion));
+            } else {
+              // if values provided - continue recursion with selected option
+              handle(local.options.find((option) => option.id === values[local.id])?.nextQuestion);
+            }
+          }
+        }
+      } else {
+        nextPageQuestions.add(questionId);
+      }
+    }
+
+    startingQuestions.forEach(handle);
+
+    return {
+      questions: [...questions].sort((a, b) => {
+        const aQuestion = localQuestions.find((q) => q.id === a);
+        const bQuestion = localQuestions.find((q) => q.id === b);
+        return bQuestion.priority - aQuestion.priority;
+      }),
+      nextPageQuestions: [...nextPageQuestions],
     };
   }
 

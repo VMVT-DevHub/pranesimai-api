@@ -168,6 +168,7 @@ export type Question<
             query: {
               question: { $in: entities.map((e) => e.id) },
             },
+            sort: '-priority',
           });
 
           return entities.map((entity) =>
