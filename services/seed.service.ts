@@ -219,6 +219,8 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M33.2923 30.375L38.4448 32.625C40.0873 33.3 41.1673 34.2 41.1673 36V43.875C41.1673 47.7225 40.0423 49.5 35.5423 49.5C31.5063 49.3113 27.6627 47.7198 24.6748 45" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M41.167 36.0002C44.6545 36.0002 50.167 35.4602 50.167 40.5002C50.167 45.0002 45.2845 46.1252 41.167 46.1252" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
+    description:
+      'Pranešimai apie neatitikimus maisto produktų kokybei, saugai, įskaitant maisto produktų, jų tiekėjų ar viešojo maitinimo įstaigų veiklą. Taip pat pranešimai apie nelegalią veiklą, susijusią su maisto produktų gamyba, platinimu ar pardavimu.',
     authType: SurveyAuthType.OPTIONAL,
     pages: [
       // =======================================
@@ -404,6 +406,8 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 </svg>
     `,
     authType: SurveyAuthType.OPTIONAL,
+    description:
+      'Pranešimai apie pašarų ar veterinarinių vaistų, taip pat jų tiekėjų neatitikimus teisės aktams, kokybės ar saugos reikalavimams. pranešimai apie nelegalią šių produktų gamybą, tiekimą ar naudojimą.',
     pages: [
       // =======================================
       pages.kontaktiniai(3),
@@ -414,12 +418,16 @@ const SURVEYS_SEED: SurveyTemplate[] = [
         questions: [
           q.select(4, 5, 'Pasirinkite dėl ko pranešate', {
             riskEvaluation: false,
-            options: o([
-              'Dėl įsigytų pašarų',
-              'Dėl pastebėtų prekybos vietoje pašarų',
-              'Dėl įsigytų veterinarinių vaistų',
-              'Dėl pastebėtų prekybos vietoje veterinarinių vaistų',
-            ]),
+            options: [
+              os('Dėl įsigytų pašarų', 5),
+              os('Dėl pastebėtų prekybos vietoje pašarų', 5),
+              os('Dėl įsigytų veterinarinių vaistų', 5),
+              os('Dėl pastebėtų prekybos vietoje veterinarinių vaistų', 5),
+              os('Dėl pašarų gamybos veiklos', '5.0'),
+              os('Dėl pašarų prekybos veiklos', '5.0'),
+              os('Dėl veterinarinių vaistų gamybos veiklos', '5.0'),
+              os('Dėl veterinarinių vaistų prekybos veiklos', '5.0'),
+            ],
           }),
         ],
       },
@@ -428,6 +436,29 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         ...pages.detales(),
         questions: [
+          q.multiselect('5.0', 5, 'Nurodykite kokius veiklos pažeidimus pranešate', {
+            riskEvaluation: false,
+            options: o([
+              'Vykdoma veikla be leidimų/registracijos',
+              'Netinkamos produktų, patiekalų laikymo sąlygos',
+              'Patalpos nehigieniškos, neatitinka nustatytų reikalavimų',
+              'Veikla vykdoma neįsidiegus savikontrolės sistemos',
+              'Neužtikrinami biologinės saugos reikalavimai',
+              'Netinkamai tvarkomos atliekos',
+              'Netinkamai pildomi veiklos dokumentai',
+              'Nepateikiama privalomoji informacija apie vykdomą veiklą',
+              'Darbuotojų higienos įgūdžių pažeidimai',
+              'Ženklinimo pažeidimai',
+              'Tinkamumo vartoti terminų pažeidimai',
+              'Neleistinos sudedamosios dalys',
+              'Produktų klastotės',
+              'Veterinarinių vaistų notifikavimo pažeidimai',
+              'Prekiaujama neleistinais produktais',
+              'Reklamos pažeidimai',
+              'Kainų, kiekių, tūrio, svorio neatitikimai',
+              'Kiti pažeidimai',
+            ]),
+          }),
           q.date(5, 6, 'Nurodykite produktų įsigijimo datą'),
           q.date(6, 7, 'Nurodykite produktų pastebėjimo prekybos vietoje datą'),
           q.multiselect(7, 8, 'Pasirinkite apie kokius produkto pažeidimus pranešate', {
@@ -466,7 +497,13 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             riskEvaluation: false,
             condition: c(10),
           }),
-          q.date(11, 12, 'Nurodykite produktų tinkamumo vartoti terminą', {
+          q.date(11, '11.1', 'Nurodykite produktų tinkamumo vartoti terminą', {
+            riskEvaluation: false,
+          }),
+          q.input('11.1', '11.2', 'Nurodykite veiklos vykdymo vietos adresą', {
+            riskEvaluation: false,
+          }),
+          q.input('11.2', 12, 'Nurodykite veiklos vykdymo vietos pavadinimą', {
             riskEvaluation: false,
           }),
         ],
@@ -496,6 +533,8 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M20.5839 22.5C22.0613 22.5 23.5242 22.791 24.8891 23.3564C26.254 23.9217 27.4942 24.7504 28.5389 25.795C29.5835 26.8397 30.4122 28.0799 30.9776 29.4448C31.5429 30.8097 31.8339 32.2726 31.8339 33.75V41.625C31.8333 43.507 31.1587 45.3266 29.9323 46.7542C28.7058 48.1818 27.0087 49.1229 25.1482 49.4071C23.2878 49.6914 21.3871 49.2999 19.7903 48.3036C18.1936 47.3074 17.0064 45.7723 16.4439 43.9763C15.4839 40.8788 13.4589 38.85 10.3689 37.89C8.57382 37.3278 7.03928 36.1415 6.04297 34.546C5.04666 32.9504 4.65439 31.0509 4.93715 29.1912C5.21992 27.3315 6.15903 25.6345 7.58455 24.4071C9.01007 23.1798 10.8278 22.5033 12.7089 22.5H20.5839Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
     authType: SurveyAuthType.OPTIONAL,
+    description:
+      'Pranešimai apie gyvūnų gerovės pažeidimus, veterinarijos paslaugų teikėjų pažeidimus teisės aktų reikalavimams ar pranešimai apie nelegaliai vykdomą veterinarinę veiklą.',
     pages: [
       // =======================================
       pages.kontaktiniai(4),
@@ -516,12 +555,8 @@ const SURVEYS_SEED: SurveyTemplate[] = [
                 'Dėl medžiojimo veiklos (veterinarinė priežiūra medžioklėje, pirminio apdorojimo aikštelės/patalpos, gyvūninių atliekų duobės)',
                 '4.13',
               ),
-              os('Dėl pašarų gamybos veiklos', '4.13'),
-              os('Dėl pašarų prekybos veiklos', '4.13'),
               os('Dėl šalutinių gyvūninių produktų tvarkymo veiklos', '4.13'),
               os('Dėl Ūkininkavimo veiklos', '4.13'),
-              os('Dėl veterinarinių vaistų gamybos veiklos', '4.13'),
-              os('Dėl veterinarinių vaistų prekybos veiklos', '4.13'),
               os('Dėl veterinarinių paslaugų veiklos', '4.13'),
               os('Dėl kitos veterinarinės veiklos', '4.13'),
             ],
@@ -710,6 +745,8 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M25.1921 16.3125C23.958 14.9969 22.3561 14.0836 20.5953 13.6916C18.8345 13.2996 16.9965 13.4471 15.3208 14.115C13.645 14.7828 12.2094 15.94 11.2009 17.4357C10.1925 18.9314 9.65797 20.6962 9.66711 22.5C9.66711 24.1425 10.1171 25.6725 10.8821 27" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
     authType: SurveyAuthType.OPTIONAL,
+    description:
+      'Pranešimai apie ligų protrūkius, kurie įtariama, kad sukelti vartojant tam tikrus maisto produktus, taip pat kitus su maisto produktų vartojimu susijusius sveikatos pažeidimus.',
     pages: [
       // =======================================
       pages.kontaktiniai(3),
@@ -805,6 +842,8 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M13.5 27C15.4473 25.5395 17.8158 24.75 20.25 24.75C22.6842 24.75 25.0527 25.5395 27 27C28.9473 28.4605 31.3158 29.25 33.75 29.25C36.1842 29.25 38.5527 28.4605 40.5 27" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
     authType: SurveyAuthType.REQUIRED,
+    description:
+      'Pranešimai apie viešai tiekiamo geriamojo vandens neatitikimus kokybės ar saugos normoms.',
     pages: [
       // =======================================
       pages.kontaktiniai(2, {}, [
@@ -860,6 +899,9 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M39.9561 9.78744L41.1486 7.06494" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
     authType: SurveyAuthType.NONE,
+    description:
+      'Pranešimai apie pastebėtas laukinių gyvūnų gaišenas, galimai susijusias su plintančiomis gyvūnų ligomis, pranešimai apie pastebėtas ūkinių gyvūnų gaišenas.',
+
     pages: [
       // =======================================
       pages.kontaktiniai(1, {
@@ -882,7 +924,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               os('Ūsūrinis šuo', 4),
               os('Ūkinis gyvūnas', 4),
               os('Gyvūnas augintinis', 4),
-              os('Kita (galima įrašyti iškarto', '3.1'),
+              os('Kita', '3.1'),
             ],
           }),
 
