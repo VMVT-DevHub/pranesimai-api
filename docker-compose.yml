@@ -21,6 +21,17 @@ services:
       - internal
     ports:
       - 6612:6379
+  minio:
+    image: minio/minio:latest
+    ports:
+      - 9140:9000
+      - 9141:9001
+    networks:
+      - internal
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server --console-address :9001 /data
 
   viisp-auth-helper:
     image: ghcr.io/aplinkosministerija/viisp-auth-helper:1.1.0
