@@ -924,7 +924,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               os('Ūsūrinis šuo', 4),
               os('Ūkinis gyvūnas', 4),
               os('Gyvūnas augintinis', 4),
-              os('Kita (galima įrašyti iškarto', '3.1'),
+              os('Kita', '3.1'),
             ],
           }),
 
