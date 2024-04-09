@@ -1,4 +1,4 @@
-const { commonFields } = require('./20240221114634_init');
+const { commonFields, schema } = require('../common');
 
 /**
  * @param { import("knex").Knex } knex
@@ -6,6 +6,7 @@ const { commonFields } = require('./20240221114634_init');
  */
 exports.up = function (knex) {
   return knex.schema
+    .withSchema(schema)
     .createTable('reports', (table) => {
       table.increments('id');
       table.integer('sessionId').unsigned();
@@ -36,6 +37,7 @@ exports.up = function (knex) {
  */
 exports.down = function (knex) {
   return knex.schema
+    .withSchema(schema)
     .dropTable('reports')
 
     .alterTable('pages', (table) => {

@@ -602,6 +602,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           }),
 
           q.multiselect(8, undefined, 'Pasirinkite ūkinio gyvūno rūšį', {
+            condition: c(6),
             riskEvaluation: false,
             options: [
               os('Galvijai', 12),
@@ -622,6 +623,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 
           q.input(9, 12, 'Nurodykite laukinio gyvūno rūšį', {
             riskEvaluation: false,
+            condition: c(6),
           }),
 
           q.multiselect(10, undefined, 'Pasirinkite gyvūno augintinio rūšį', {
@@ -736,7 +738,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 
   // SURVEY 4
   {
-    title: 'Maisto sukeltų protrukių pranešimas',
+    title: 'Maisto sukeltų protrūkių pranešimas',
     icon: `<svg viewBox="0 0 55 54" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M16.417 47.25H38.917" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M27.667 47.25C33.0376 47.25 38.1883 45.1165 41.9859 41.3189C45.7835 37.5213 47.917 32.3706 47.917 27H7.41699C7.41699 32.3706 9.55047 37.5213 13.3481 41.3189C17.1457 45.1165 22.2964 47.25 27.667 47.25Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -816,12 +818,18 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           required: true,
         },
         [
-          q.radio(18, 19, 'Ar dėl kilusio sveikatos sutrikdymo kreipėtės į gydymo įstaigą?', {
-            riskEvaluation: false,
-            options: o(['Taip', 'Ne']),
-          }),
+          q.radio(
+            18,
+            undefined,
+            'Ar dėl kilusio sveikatos sutrikdymo kreipėtės į gydymo įstaigą?',
+            {
+              riskEvaluation: false,
+              options: [os('Taip', 19), os('Ne', 20)],
+            },
+          ),
           q.input(19, 20, 'Nurodykite sveikatos priežiūros įstaigos į kurią kreipėtės pavadinimą', {
             riskEvaluation: false,
+            condition: c(18),
           }),
         ],
       ),
@@ -836,7 +844,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 
   // SURVEY 5
   {
-    title: 'Viešai tiekiamo geriamojo vande',
+    title: 'Viešai tiekiamo geriamojo vandens pranešimai',
     icon: `<svg viewBox="0 0 55 54" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M34.2 49.5H19.8C18.6841 49.5062 17.6056 49.0975 16.7741 48.3532C15.9425 47.609 15.4172 46.5823 15.3 45.4725L11.25 6.75H42.75L38.6775 45.4725C38.5607 46.5784 38.0386 47.6019 37.2118 48.3457C36.385 49.0894 35.3121 49.5006 34.2 49.5Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M13.5 27C15.4473 25.5395 17.8158 24.75 20.25 24.75C22.6842 24.75 25.0527 25.5395 27 27C28.9473 28.4605 31.3158 29.25 33.75 29.25C36.1842 29.25 38.5527 28.4605 40.5 27" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -904,16 +912,26 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 
     pages: [
       // =======================================
-      pages.kontaktiniai(1, {
-        required: false,
-        riskEvaluation: false,
-      }),
+      pages.kontaktiniai(
+        1,
+        {
+          required: false,
+          riskEvaluation: false,
+          authRelation: null,
+        },
+        [
+          q.input(2, '2.0', 'Prašome nurodyti savo kontaktinį telefono numerį', {
+            required: false,
+            riskEvaluation: false,
+          }),
+        ],
+      ),
 
       // =======================================
       {
         ...pages.detales(),
         questions: [
-          q.date(2, 3, 'Nurodykite pranešamo įvykio datą'),
+          q.date('2.0', 3, 'Nurodykite pranešamo įvykio datą'),
 
           q.multiselect(3, undefined, 'Pasirinkite kokią gaišeną radote', {
             riskEvaluation: false,
