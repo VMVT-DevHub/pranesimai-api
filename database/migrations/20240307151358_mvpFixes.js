@@ -1,9 +1,12 @@
+const { schema } = require('../common');
+
 /**
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
 exports.up = function (knex) {
   return knex.schema
+    .withSchema(schema)
     .alterTable('surveys', (table) => {
       table.dropColumn('lastPageId');
       table.enum('authType', ['OPTIONAL', 'REQUIRED', 'NONE']);
@@ -40,6 +43,7 @@ exports.up = function (knex) {
  */
 exports.down = function (knex) {
   return knex.schema
+    .withSchema(schema)
     .alterTable('surveys', (table) => {
       table.integer('firstPageId').unsigned();
       table.dropColumn('authType');

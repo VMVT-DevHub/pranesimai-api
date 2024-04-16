@@ -1,10 +1,4 @@
-const commonFields = (table) => {
-  table.timestamp('createdAt');
-  table.timestamp('updatedAt');
-  table.timestamp('deletedAt');
-};
-
-exports.commonFields = commonFields;
+const { commonFields, schema } = require('../common');
 
 /**
  * @param { import("knex").Knex } knex
@@ -12,6 +6,7 @@ exports.commonFields = commonFields;
  */
 exports.up = function (knex) {
   return knex.schema
+    .withSchema(schema)
     .createTable('surveys', (table) => {
       table.increments('id');
       table.string('title');
@@ -105,6 +100,7 @@ exports.up = function (knex) {
  */
 exports.down = function (knex) {
   return knex.schema
+    .withSchema(schema)
     .dropTable('surveys')
     .dropTable('pages')
     .dropTable('questions')

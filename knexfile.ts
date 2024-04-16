@@ -10,6 +10,7 @@ const config = {
   connection: process.env.DB_CONNECTION,
   migrations: {
     tableName: 'migrations',
+    schemaName: process.env.DB_SCHEMA,
     directory: './database/migrations',
   },
   pool: { min: 0, max: 7 },

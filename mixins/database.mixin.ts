@@ -40,6 +40,7 @@ export default function (opts: any = {}) {
     options: {
       knex: config,
       tableName: opts.collection,
+      schema: opts.schema || process.env.DB_SCHEMA,
     },
   };
 

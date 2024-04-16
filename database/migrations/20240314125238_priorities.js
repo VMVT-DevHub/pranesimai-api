@@ -1,9 +1,12 @@
+const { schema } = require('../common');
+
 /**
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
 exports.up = function (knex) {
   return knex.schema
+    .withSchema(schema)
     .alterTable('questions', (table) => {
       table.integer('priority');
     })
@@ -18,6 +21,7 @@ exports.up = function (knex) {
  */
 exports.down = function (knex) {
   return knex.schema
+    .withSchema(schema)
     .alterTable('questions', (table) => {
       table.dropColumn('priority');
     })
