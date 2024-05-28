@@ -125,18 +125,6 @@ export default class SurveysService extends moleculer.Service {
 `;
   }
 
-  @Action({
-    auth: EndpointType.PUBLIC,
-    rest: 'GET /mermaid',
-  })
-  async mermaidList(ctx: any) {
-    const surveys: Survey[] = await ctx.call('surveys.find', { limit: 1 });
-    ctx.meta.$statusCode = 302;
-    ctx.meta.$location = `/surveys/mermaid/${surveys[0].id}?dynamicFields=true`;
-
-    return;
-  }
-
   @Method
   mermaidQueryParams(featuresSource: MermaidFeatures, featureToToggle?: string) {
     const features = {
@@ -155,9 +143,9 @@ export default class SurveysService extends moleculer.Service {
 
   @Action({
     auth: EndpointType.PUBLIC,
-    rest: 'GET /mermaid/:id',
+    rest: 'GET /mermaid',
     params: {
-      id: 'number|convert',
+      id: 'number|convert|optional',
       ...['conditions', 'dynamicFields'].reduce(
         (acc, curr) => ({
           ...acc,
@@ -171,8 +159,17 @@ export default class SurveysService extends moleculer.Service {
       ),
     },
   })
-  async mermaidItem(ctx: Context<{ id: Survey['id'] } & MermaidFeatures, any>) {
+  async mermaid(ctx: Context<{ id?: Survey['id'] } & MermaidFeatures, any>) {
     const { id, ...features } = ctx.params;
+
+    if (!id) {
+      const surveys: Survey[] = await ctx.call('surveys.find', { limit: 1 });
+      ctx.meta.$statusCode = 302;
+      ctx.meta.$location = `?id=${surveys[0].id}&dynamicFields=true`;
+
+      return;
+    }
+
     const surveys: Survey[] = await ctx.call('surveys.find');
 
     const survey: Survey = await ctx.call('surveys.resolve', {
@@ -199,7 +196,7 @@ export default class SurveysService extends moleculer.Service {
       `<ul>${surveys
         .map(
           (survey) =>
-            `<li><a href="/surveys/mermaid/${survey.id}?${this.mermaidQueryParams(features)}">${
+            `<li><a href="?id=${survey.id}&${this.mermaidQueryParams(features)}">${
               survey.title
             }</li>`,
         )
@@ -215,7 +212,8 @@ export default class SurveysService extends moleculer.Service {
 
       <div style="margin-top: 50px">
       <b>Features (kai kurias diagramas labai iškraipo)</b>
-      <form method="GET" action="/surveys/mermaid/${id}">
+      <form method="GET">
+        <input type="hidden" name="id" value="${id}" />
         ${Object.keys(features)
           .map(
             (feature) =>
@@ -251,7 +249,7 @@ export default class SurveysService extends moleculer.Service {
   }
 }%%
 flowchart TB;
-  ${pages.map((page) => this.mermaidPage(page, features)).join('\n')}
+  ${pages.map((page) => this.mermaidPage(page, features, id)).join('\n')}
   ${this.mermaidRelations(pages, features)}
   ${this.mermaidStyles(pages)}
   classDef question fill:#e0ebff,stroke:#000,stroke-width:1px,color:#000
@@ -275,7 +273,7 @@ flowchart TB;
   }
 
   @Method
-  mermaidQuestion(question: Question<'options'>, features: MermaidFeatures) {
+  mermaidQuestion(question: Question<'options'>, features: MermaidFeatures, id: number) {
     return `subgraph question-${this.mermaidIdWithTitle(question.id, question.title)}
   ${question.options
     .map((option) => `option-${this.mermaidIdWithTitle(option.id, option.title)}`)
@@ -300,7 +298,7 @@ flowchart TB;
              .join('\n'),
          )
          .join('\n')}"/];
-        click dynamic-${question.id} href "?${this.mermaidQueryParams(
+        click dynamic-${question.id} href "?id=${id}&${this.mermaidQueryParams(
          features,
          `dynamicFieldsPointers${question.id}`,
        )}"
@@ -372,7 +370,7 @@ end`;
   }
 
   @Method
-  mermaidPage(page: Page<'questions'>, features: MermaidFeatures) {
+  mermaidPage(page: Page<'questions'>, features: MermaidFeatures, id: number) {
     return `subgraph page-${this.mermaidIdWithTitle(page.id, page.title)}
     direction LR
 ${
@@ -392,7 +390,7 @@ ${
          `
     : ''
 }
-  ${page.questions.map((question) => this.mermaidQuestion(question, features)).join('\n  ')}
+  ${page.questions.map((question) => this.mermaidQuestion(question, features, id)).join('\n  ')}
 end`;
   }
 }
