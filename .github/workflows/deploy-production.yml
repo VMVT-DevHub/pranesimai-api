@@ -25,12 +25,11 @@ jobs:
           environment: production
           push: true
 
-      # TODO: setup deployment
-      # - name: Trigger deploy
-      #   uses: AplinkosMinisterija/reusable-workflows/.github/actions/trigger-workflow-and-wait@main
-      #   with:
-      #     application-id: ${{ secrets.PRANESIMAI_TRIGGER_DEPLOY_APPLICATION_ID }}
-      #     application-private-key: ${{ secrets.PRANESIMAI_TRIGGER_DEPLOY_APPLICATION_PRIVATE_KEY }}
-      #     repository: ${{ secrets.PRANESIMAI_TRIGGER_DEPLOY_REPOSITORY }}
-      #     workflow-file-name: ${{ secrets.PRANESIMAI_TRIGGER_DEPLOY_WORKFLOW_FILE_NAME }}
-      #     workflow-payload: '{"environment": "production"}'
+      - name: Trigger deploy
+        uses: vmvt-devhub/reusable-workflows/.github/actions/trigger-workflow-and-wait@main
+        with:
+          application-id: ${{ secrets.A1CS_TRIGGER_DEPLOY_APPLICATION_ID }}
+          application-private-key: ${{ secrets.A1CS_TRIGGER_DEPLOY_APPLICATION_PRIVATE_KEY }}
+          repository: ${{ secrets.A1CS_TRIGGER_DEPLOY_REPOSITORY }}
+          workflow-file-name: ${{ secrets.A1CS_TRIGGER_DEPLOY_WORKFLOW_FILE_NAME }}
+          workflow-payload: '{"environment": "production"}'
