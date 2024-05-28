@@ -13,6 +13,7 @@ import {
   COMMON_FIELDS,
   COMMON_SCOPES,
   Table,
+  FieldHookCallback,
 } from '../types';
 import { Page } from './pages.service';
 import { QuestionOption } from './questionOptions.service';
@@ -80,8 +81,32 @@ export type Response<
         columnType: 'integer',
         columnName: 'pageId',
         required: true,
-        populate: {
-          action: 'pages.resolve',
+        populate(ctx: Context, _values: any, responses: any[]) {
+          return Promise.all(
+            responses.map(async (response) => {
+              let { dynamicFields, ...page }: Page = await ctx.call('pages.resolve', {
+                id: response.pageId,
+              });
+
+              if (dynamicFields) {
+                const { values: prevValues } = await this.resolveEntities(ctx, {
+                  id: response.previousResponseId,
+                  fields: 'values',
+                });
+
+                dynamicFields.forEach((df) => {
+                  if (prevValues[df.condition.question] === df.condition.value) {
+                    page = {
+                      ...page,
+                      ...df.values,
+                    };
+                  }
+                });
+              }
+
+              return page;
+            }),
+          );
         },
       },
 
@@ -97,16 +122,69 @@ export type Response<
       questions: {
         type: 'array',
         items: 'number',
-        populate: {
-          action: 'questions.resolve',
-          params: {
-            populate: 'options',
-          },
+        populate(ctx: Context, _values: any, responses: any[]) {
+          return Promise.all(
+            responses.map(async (response) => {
+              const questions: Question[] = await ctx.call('questions.resolve', {
+                id: response.questions,
+                populate: 'options',
+              });
+
+              const { values: prevValues } = await this.resolveEntities(ctx, {
+                id: response.previousResponseId,
+                fields: 'values',
+              });
+
+              return questions.map(({ dynamicFields, ...question }) => {
+                if (dynamicFields) {
+                  dynamicFields.forEach((df) => {
+                    if (prevValues[df.condition.question] === df.condition.value) {
+                      question = {
+                        ...question,
+                        ...df.values,
+                      };
+                    }
+                  });
+                }
+
+                return question;
+              });
+            }),
+          );
         },
       },
 
       values: {
         type: 'object',
+        async set({ value, entity }: FieldHookCallback) {
+          if (!value) return value;
+
+          // filter out other page values
+          return Object.keys(value)
+            .filter((key) => entity.questions.includes(Number(key)))
+            .reduce(
+              (obj, key) => ({
+                ...obj,
+                [key]: value[key],
+              }),
+              {},
+            );
+        },
+        async get({ ctx, entity, value }: FieldHookCallback) {
+          if (entity.previousResponseId) {
+            const { values: prevValues } = await this.resolveEntities(ctx, {
+              id: entity.previousResponseId,
+              fields: 'values',
+            });
+
+            return {
+              ...prevValues,
+              ...value,
+            };
+          }
+
+          return value;
+        },
         async onCreate({
           ctx,
           value,

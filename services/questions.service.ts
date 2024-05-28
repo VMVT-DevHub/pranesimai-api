@@ -11,7 +11,9 @@ import {
   COMMON_DEFAULT_SCOPES,
   COMMON_FIELDS,
   COMMON_SCOPES,
+  DYNAMIC_FIELDS,
   Table,
+  DynamicFields,
 } from '../types';
 import { QuestionOption } from './questionOptions.service';
 import { Survey } from './surveys.service';
@@ -60,6 +62,7 @@ interface Fields extends CommonFields {
     question: Question['id'];
     value: any;
   };
+  dynamicFields: DynamicFields<Question>;
   options: undefined;
 }
 
@@ -150,6 +153,8 @@ export type Question<
           value: 'any',
         },
       },
+
+      ...DYNAMIC_FIELDS,
 
       nextQuestion: {
         type: 'number',

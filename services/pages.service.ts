@@ -11,6 +11,8 @@ import {
   COMMON_FIELDS,
   COMMON_SCOPES,
   Table,
+  DynamicFields,
+  DYNAMIC_FIELDS,
 } from '../types';
 import { Question } from './questions.service';
 
@@ -18,6 +20,7 @@ interface Fields extends CommonFields {
   title: string;
   description: string;
   questions: undefined;
+  dynamicFields: DynamicFields<Page>;
 }
 
 interface Populates extends CommonPopulates {
@@ -67,6 +70,7 @@ export type Page<
         },
       },
 
+      ...DYNAMIC_FIELDS,
       ...COMMON_FIELDS,
     },
 

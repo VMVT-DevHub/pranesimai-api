@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { FieldHookCallback } from './';
+import { Question } from '../services/questions.service';
 
 export enum EndpointType {
   PUBLIC = 'PUBLIC',
@@ -20,6 +20,31 @@ export function queryBoolean(field: string, value: boolean = false) {
   }
   return { $raw: `${fieldValue} TRUE` };
 }
+
+export type DynamicFields<T> = Array<{
+  condition: {
+    question: Question['id'];
+    value: any;
+  };
+  values: Partial<T>;
+}>;
+
+export const DYNAMIC_FIELDS = {
+  dynamicFields: {
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        condition: 'any',
+        values: {
+          type: 'record',
+          key: 'string',
+          value: 'any',
+        },
+      },
+    },
+  },
+};
 
 export const COMMON_FIELDS = {
   createdAt: {
