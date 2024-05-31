@@ -13,8 +13,17 @@ type SurveyTemplate = {
   icon: Survey['icon'];
   authType: SurveyAuthType;
   pages: Array<{
+    id?: Page['id'];
     title: Page['title'];
     description?: Page['description'];
+    dynamicFields?: Array<{
+      condition: {
+        question: number | string; // virtual id
+        value?: Page['dynamicFields'][number]['condition']['value'];
+        valueIndex?: number; // index of question option
+      };
+      values: Page['dynamicFields'][number]['values'];
+    }>;
     questions?: Array<{
       id: string; // excel id
       nextQuestion?: string; // excel id
@@ -26,9 +35,18 @@ type SurveyTemplate = {
       riskEvaluation: Question['riskEvaluation'];
       authRelation?: Question['authRelation'];
       condition?: {
-        question: string; // excel id
+        question: number | string; // excel id
         value?: Question['condition']['value']; // if not present, will be detected automatically
+        valueIndex?: number; // index of question option
       };
+      dynamicFields?: Array<{
+        condition: {
+          question: number | string; // virtual id
+          value?: Question['dynamicFields'][number]['condition']['value'];
+          valueIndex?: number; // index of question option
+        };
+        values: Question['dynamicFields'][number]['values'];
+      }>;
       options?: Array<{
         nextQuestion?: string; // excel id
         title: QuestionOption['title'];
@@ -80,17 +98,20 @@ const c = (id: number | string) => ({
   question: `${id}`,
 });
 
+// dynamicFields multi options
+const dm = (question: number | string, indexes: number[], values: any = {}) =>
+  indexes.map((valueIndex) => ({
+    condition: {
+      question,
+      valueIndex,
+    },
+    values,
+  }));
+
 // options
 const o = (options: string[]) =>
   options.map((title) => ({
     title,
-  }));
-
-// options with incremental nextQuestion
-const oi = (startId: number, options: string[]) =>
-  options.map((title) => ({
-    title,
-    nextQuestion: `${startId++}`,
   }));
 
 // single option helper
@@ -98,6 +119,21 @@ const os = (title: string, nextQuestion?: number | string) => ({
   title,
   nextQuestion: nextQuestion && `${nextQuestion}`,
 });
+
+const helperVeiklos = (id: number | string, idOut: number | string, qa: QuestionExtends = {}) => [
+  q.radio(id, undefined, 'Nurodykite prekybos būdą', {
+    options: [os('Fizinėje prekybos vietoje', `${id}.1`), os('Internetu', `${id}.2`)],
+    ...qa,
+  }),
+  q.location(`${id}.1`, idOut, 'Žemėlapyje nurodykite pardavimo vietą', {
+    condition: c(id),
+    ...qa,
+  }),
+  q.input(`${id}.2`, idOut, 'Pateikite nuoroda į internetinės prekybos puslapį', {
+    condition: c(id),
+    ...qa,
+  }),
+];
 
 const pages = {
   kontaktiniai: (
@@ -136,11 +172,12 @@ const pages = {
     q1: QuestionExtends = {},
     q2: QuestionExtends = {},
     q3: QuestionExtends = {},
+    e: any = {},
   ) => ({
     title: 'Veiklos informacija',
     description: 'Pateikite papildomą informaciją',
     questions: [
-      q.location(id, id + 1, 'Nurodykite veiklos vietos adresą', {
+      q.location(id, id + 1, '', {
         riskEvaluation: false,
         ...q1,
       }),
@@ -153,6 +190,7 @@ const pages = {
         ...q3,
       }),
     ],
+    ...e,
   }),
 
   aplinkybes: (
@@ -179,7 +217,7 @@ const pages = {
   vaizdine: (id: number, q1: QuestionExtends = {}, q2: QuestionExtends = {}) => ({
     title: 'Vaizdinė medžiaga ir kiti dokumentai',
     description:
-      'Pridėkite vaizdinę medžiagą (nuotraukas, video) arba kitus dokumentus įrodančius pateikiamus',
+      'Pridėkite vaizdinę medžiagą (nuotraukas, video) arba kitus dokumentus įrodančius pateikiamus pažeidimus',
     questions: [
       q.radio(id, undefined, 'Ar galite pateikti įrodymų apie pranešamus pažeidimus?', {
         options: [os('Taip', id + 1), os('Ne', id + 2)],
@@ -232,13 +270,16 @@ const SURVEYS_SEED: SurveyTemplate[] = [
         questions: [
           q.select(4, undefined, 'Pasirinkite dėl ko pranešate', {
             riskEvaluation: false,
-            options: oi(5, [
-              'Dėl įsigytų maisto produktų ar su maistu besiliečiančių medžiagų',
-              'Dėl pastebėtų prekybos vietoje maisto produktų ar su maistu besiliečiančių medžiagų',
-              'Dėl įsigytų patiekalų',
-              'Dėl suteiktų viešojo maitinimo paslaugų',
-              'Dėl vykdomos maisto tvarkymo veiklos pažeidimų',
-            ]),
+            options: [
+              os('Dėl įsigytų maisto produktų ar su maistu besiliečiančių medžiagų', 5), // 0
+              os(
+                'Dėl pastebėtų prekybos vietoje maisto produktų ar su maistu besiliečiančių medžiagų',
+                6,
+              ), // 1
+              os('Dėl įsigytų patiekalų', 7), // 2
+              os('Dėl suteiktų viešojo maitinimo paslaugų', 8), // 3
+              os('Dėl vykdomos maisto tvarkymo veiklos pažeidimų', 9), // 4
+            ],
           }),
         ],
       },
@@ -246,6 +287,35 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       // =======================================
       {
         ...pages.detales(),
+        dynamicFields: [
+          {
+            condition: {
+              question: 4,
+              valueIndex: 0,
+            },
+            values: {
+              title: 'Informacija apie produktą',
+            },
+          },
+          {
+            condition: {
+              question: 4,
+              valueIndex: 1,
+            },
+            values: {
+              title: 'Informacija apie produktą',
+            },
+          },
+          {
+            condition: {
+              question: 4,
+              valueIndex: 2,
+            },
+            values: {
+              title: 'Informacija apie patiekalą',
+            },
+          },
+        ],
         questions: [
           q.date(5, 10, 'Nurodykite produktų įsigijimo datą'),
           q.date(6, 10, 'Nurodykite produktų pastebėjimo prekybos vietoje datą'),
@@ -333,7 +403,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               'Kiti pažeidima',
             ]),
           }),
-          q.multiselect(15, 21, 'Pasirinkite apie kokius veklos pažeidimus pranešate', {
+          q.multiselect(15, '21.0', 'Pasirinkite apie kokius veklos pažeidimus pranešate', {
             options: o([
               'Vykdoma veikla be leidimų/registracijos',
               'Netinkamos produktų, patiekalų laikymo sąlygos',
@@ -370,27 +440,131 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.radio(18, undefined, 'Ar galite nurodyti importuotoją?', {
             riskEvaluation: false,
             options: [os('Taip', '18.1'), os('Ne', 19)],
+            dynamicFields: [
+              {
+                condition: {
+                  question: 4,
+                  valueIndex: 0,
+                },
+                values: {
+                  title: 'Ar galite nurodyti tiekėją',
+                },
+              },
+              {
+                condition: {
+                  question: 4,
+                  valueIndex: 1,
+                },
+                values: {
+                  title: 'Ar galite nurodyti tiekėją',
+                },
+              },
+            ],
           }),
           q.input('18.1', 19, 'Produkto importuotojas', {
             condition: c(18),
+            dynamicFields: [
+              {
+                condition: {
+                  question: 4,
+                  valueIndex: 0,
+                },
+                values: {
+                  title: 'Produkto tiekėjas',
+                },
+              },
+              {
+                condition: {
+                  question: 4,
+                  valueIndex: 1,
+                },
+                values: {
+                  title: 'Produkto tiekėjas',
+                },
+              },
+            ],
           }),
-          q.date(19, 21, 'Nurodykite produktų tinkamumo vartoti terminą', {
+          q.date(19, '21.0', 'Nurodykite produktų tinkamumo vartoti terminą', {
             riskEvaluation: false,
+            required: false,
+            dynamicFields: [
+              {
+                condition: {
+                  question: 13,
+                  valueIndex: 1,
+                },
+                values: {
+                  required: true,
+                },
+              },
+            ],
           }),
-          q.input(20, 21, 'Nurodykite patiekalo pavadinimą', {
+          q.input(20, '21.0', 'Nurodykite patiekalo pavadinimą', {
             riskEvaluation: false,
+            dynamicFields: [
+              ...dm(4, [3], {
+                required: false,
+              }),
+            ],
           }),
         ],
       },
 
       // =======================================
-      pages.informacija(21),
+      {
+        title: 'Veiklos informacija',
+        description: 'Pateikite papildomą informaciją',
+        dynamicFields: [
+          ...dm(4, [0, 1, 2], {
+            title: 'Informacija apie prekybos vietą',
+          }),
+          ...dm(4, [3], {
+            title: 'Informacija apie paslaugų tiekimo vietą',
+          }),
+        ],
+        questions: [
+          ...helperVeiklos('21.0', 21, {
+            dynamicFields: [
+              ...dm(4, [3, 4], {
+                condition: false,
+              }),
+            ],
+          }),
+          q.location(21, 22, 'Žemėlapyje nurodykite veiklos vykdymo vietą', {
+            riskEvaluation: false,
+            dynamicFields: [
+              ...dm(4, [0, 1, 2], {
+                condition: false,
+              }),
+            ],
+          }),
+          q.input(22, 23, 'Nurodykite veiklos pavadinimą', {
+            riskEvaluation: false,
+            dynamicFields: [
+              ...dm(4, [0, 1, 2], {
+                title: 'Nurodykite prekybos vietos pavadinimą',
+              }),
+              ...dm(4, [3], {
+                title: 'Nurodykite paslaugų suteikimo vietos pavadinimą',
+              }),
+            ],
+          }),
+          q.text(23, 24, 'Nurodykite veiklą vykdančius fizinius ar juridinius asmenis', {
+            riskEvaluation: false,
+            required: false,
+          }),
+        ],
+      },
 
       // =======================================
       pages.aplinkybes(24),
 
       // =======================================
-      pages.vaizdine(25),
+      {
+        ...pages.vaizdine(25),
+        description:
+          'Pridėkite vaizdinę medžiagą (nuotraukas, video) arba kitus dokumentus įrodančius pateikiamus pažeidimus. Pvz: įsigijimo čekis, produkto nuotraukos, ženklinimo informacija ir pan.',
+      },
 
       // =======================================
       pages.teises(27),
@@ -407,7 +581,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
     `,
     authType: SurveyAuthType.OPTIONAL,
     description:
-      'Pranešimai apie pašarų ar veterinarinių vaistų, taip pat jų tiekėjų neatitikimus teisės aktams, kokybės ar saugos reikalavimams. pranešimai apie nelegalią šių produktų gamybą, tiekimą ar naudojimą.',
+      'Pranešimai apie pašarus ir veterinarinius vaistus, jų kokybės, saugos, ženklinimo ir kitus pažeidimus, nelegalią šių produktų gamybą, tiekimą. Pranešimai apie pašarų ir veterinarinės farmacijos ūkio subjektų veiklos pažeidimus.',
     pages: [
       // =======================================
       pages.kontaktiniai(3),
@@ -416,17 +590,17 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         ...pages.tema(),
         questions: [
-          q.select(4, 5, 'Pasirinkite dėl ko pranešate', {
+          q.select(4, undefined, 'Pasirinkite dėl ko pranešate', {
             riskEvaluation: false,
             options: [
-              os('Dėl įsigytų pašarų', 5),
-              os('Dėl pastebėtų prekybos vietoje pašarų', 5),
-              os('Dėl įsigytų veterinarinių vaistų', 5),
-              os('Dėl pastebėtų prekybos vietoje veterinarinių vaistų', 5),
-              os('Dėl pašarų gamybos veiklos', '5.0'),
-              os('Dėl pašarų prekybos veiklos', '5.0'),
-              os('Dėl veterinarinių vaistų gamybos veiklos', '5.0'),
-              os('Dėl veterinarinių vaistų prekybos veiklos', '5.0'),
+              os('Dėl įsigytų pašarų', 5), // 0
+              os('Dėl pastebėtų prekybos vietoje pašarų', 6), // 1
+              os('Dėl įsigytų veterinarinių vaistų', 5), // 2
+              os('Dėl pastebėtų prekybos vietoje veterinarinių vaistų', 6), // 3
+              os('Dėl pašarų gamybos veiklos', '5.0.pre'), // 4
+              os('Dėl pašarų prekybos veiklos', '5.0.pre'), // 5
+              os('Dėl veterinarinių vaistų gamybos veiklos', '5.0.pre'), // 6
+              os('Dėl veterinarinių vaistų prekybos veiklos', '5.0.pre'), // 7
             ],
           }),
         ],
@@ -435,51 +609,187 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       // =======================================
       {
         ...pages.detales(),
+        dynamicFields: [
+          {
+            condition: {
+              question: 4,
+              valueIndex: 0,
+            },
+            values: {
+              title: 'Informacija apie produktą',
+            },
+          },
+          {
+            condition: {
+              question: 4,
+              valueIndex: 1,
+            },
+            values: {
+              title: 'Informacija apie produktą',
+            },
+          },
+          {
+            condition: {
+              question: 4,
+              valueIndex: 2,
+            },
+            values: {
+              title: 'Informacija apie produktą',
+            },
+          },
+          {
+            condition: {
+              question: 4,
+              valueIndex: 3,
+            },
+            values: {
+              title: 'Informacija apie produktą',
+            },
+          },
+        ],
         questions: [
-          q.multiselect('5.0', 5, 'Nurodykite kokius veiklos pažeidimus pranešate', {
+          q.date('5.0.pre', '5.0', 'Nurodykite pažeidimų pastebėjimo datą'),
+          q.multiselect('5.0', '12.0', 'Nurodykite kokius veiklos pažeidimus pranešate', {
             riskEvaluation: false,
             options: o([
-              'Vykdoma veikla be leidimų/registracijos',
-              'Netinkamos produktų, patiekalų laikymo sąlygos',
-              'Patalpos nehigieniškos, neatitinka nustatytų reikalavimų',
-              'Veikla vykdoma neįsidiegus savikontrolės sistemos',
-              'Neužtikrinami biologinės saugos reikalavimai',
-              'Netinkamai tvarkomos atliekos',
-              'Netinkamai pildomi veiklos dokumentai',
-              'Nepateikiama privalomoji informacija apie vykdomą veiklą',
-              'Darbuotojų higienos įgūdžių pažeidimai',
-              'Ženklinimo pažeidimai',
-              'Tinkamumo vartoti terminų pažeidimai',
-              'Neleistinos sudedamosios dalys',
-              'Produktų klastotės',
-              'Veterinarinių vaistų notifikavimo pažeidimai',
-              'Prekiaujama neleistinais produktais',
-              'Reklamos pažeidimai',
-              'Kainų, kiekių, tūrio, svorio neatitikimai',
-              'Kiti pažeidimai',
+              'Kiti pažeidimai', // 0
+              'Kokybės pažeidimai', // 1
+              'Neleistinos sudedamosios dalys', // 2
+              'Neregistruotas veterinarinis vaistas', // 3
+              'Neregistruoti veterinariniai vaistai', // 4
+              'Netinkamai pildomi veiklos dokumentai', // 5
+              'Netinkamai tvarkomos atliekos', // 6
+              'Netinkamos laikymo sąlygos', // 7
+              'Netinkamos produktų laikymo sąlygos', // 8
+              'Patalpos nehigieniškos, neatitinka nustatytų reikalavimų', // 9
+              'Prekiaujama neleistinais produktais', // 10
+              'Produktas užterštas cheminiais, fiziniais, mikrobiniais ar kitokiais teršalais', // 11
+              'Reklamos pažeidimai', // 12
+              'Tinkamumo vartoti terminų pažeidimai', // 13
+              'Vykdoma veikla be leidimų/registracijos', // 14
+              'Ženklinimo pažeidimai', // 15
             ]),
+            dynamicFields: [
+              ...dm(4, [0], {
+                options: [1, 15, 13, 2, 10, 11, 7, 12, 0],
+              }),
+              ...dm(4, [1], {
+                options: [1, 15, 13, 2, 10, 11, 7, 12, 0],
+              }),
+              ...dm(4, [2], {
+                options: [15, 13, 2, 3, 10, 7, 12, 0],
+              }),
+              ...dm(4, [3], {
+                options: [15, 13, 2, 3, 10, 7, 12, 0],
+              }),
+              ...dm(4, [4], {
+                options: [14, 8, 9, 6, 5, 15, 13, 2, 0],
+              }),
+              ...dm(4, [5], {
+                options: [14, 8, 9, 6, 5, 15, 13, 2, 12, 0],
+              }),
+              ...dm(4, [6], {
+                options: [14, 8, 9, 6, 5, 15, 13, 2, 4, 0],
+              }),
+              ...dm(4, [7], {
+                options: [14, 8, 9, 6, 5, 15, 13, 2, 4, 12, 0],
+              }),
+            ],
           }),
-          q.date(5, 6, 'Nurodykite produktų įsigijimo datą'),
-          q.date(6, 7, 'Nurodykite produktų pastebėjimo prekybos vietoje datą'),
-          q.multiselect(7, 8, 'Pasirinkite apie kokius produkto pažeidimus pranešate', {
+          q.date(5, 6, 'Nurodykite produktų įsigijimo datą', {
+            dynamicFields: [
+              {
+                condition: {
+                  question: 4,
+                  valueIndex: 0,
+                },
+                values: {
+                  title: 'Nurodykite pašarų įsigijimo datą',
+                },
+              },
+              {
+                condition: {
+                  question: 4,
+                  valueIndex: 2,
+                },
+                values: {
+                  title: 'Nurodykite veterinarinių vaistų įsigijimo datą',
+                },
+              },
+            ],
+          }),
+          q.date(6, 7, 'Nurodykite produktų pastebėjimo prekybos vietoje datą', {
+            dynamicFields: [
+              ...dm(4, [1], {
+                title: 'Nurodykite pašarų pastebėjimo prekybos vietoje datą',
+              }),
+              ...dm(4, [3], {
+                title: 'Nurodykite veterinarinių vaistų pastebėjimo prekybos vietoje datą',
+              }),
+              ...dm(4, [0, 2], {
+                condition: false,
+              }),
+            ],
+          }),
+          q.multiselect(7, 8, 'Pasirinkite apie kokius pažeidimus pranešate', {
             options: o([
-              'Kokybės pažeidimai',
-              'Ženklinimo pažeidimai',
-              'Tinkamumo vartoti terminų pažeidimai',
-              'Produktų klastotės',
-              'Neleistinos sudedamosios dalys',
-              'Kainų, kiekių, tūrio, svorio neatitikimai',
-              'Neregistruotas veterinarinis vaistas',
-              'Alergenų informacijos pateikimo pažeidimai',
-              'Prekiaujama neleistinais produktais',
-              'Produktas užterštas cheminiais, fiziniais, mikrobiniais ar kitokiais teršalais',
-              'Netinkamos veterinarinių vaistų/pašarų laikymo sąlygos',
-              'Kiti pažeidimai',
+              'Kiti pažeidimai', // 0
+              'Kokybės pažeidimai', // 1
+              'Neleistinos sudedamosios dalys', // 2
+              'Neregistruotas veterinarinis vaistas', // 3
+              'Neregistruoti veterinariniai vaistai', // 4
+              'Netinkamai pildomi veiklos dokumentai', // 5
+              'Netinkamai tvarkomos atliekos', // 6
+              'Netinkamos laikymo sąlygos', // 7
+              'Netinkamos produktų laikymo sąlygos', // 8
+              'Patalpos nehigieniškos, neatitinka nustatytų reikalavimų', // 9
+              'Prekiaujama neleistinais produktais', // 10
+              'Produktas užterštas cheminiais, fiziniais, mikrobiniais ar kitokiais teršalais', // 11
+              'Reklamos pažeidimai', // 12
+              'Tinkamumo vartoti terminų pažeidimai', // 13
+              'Vykdoma veikla be leidimų/registracijos', // 14
+              'Ženklinimo pažeidimai', // 15
             ]),
+            dynamicFields: [
+              ...dm(4, [0], {
+                options: [1, 15, 13, 2, 10, 11, 7, 12, 0],
+              }),
+              ...dm(4, [1], {
+                options: [1, 15, 13, 2, 10, 11, 7, 12, 0],
+              }),
+              ...dm(4, [2], {
+                options: [15, 13, 2, 3, 10, 7, 12, 0],
+              }),
+              ...dm(4, [3], {
+                options: [15, 13, 2, 3, 10, 7, 12, 0],
+              }),
+              ...dm(4, [4], {
+                options: [14, 8, 9, 6, 5, 15, 13, 2, 0],
+              }),
+              ...dm(4, [5], {
+                options: [14, 8, 9, 6, 5, 15, 13, 2, 12, 0],
+              }),
+              ...dm(4, [6], {
+                options: [14, 8, 9, 6, 5, 15, 13, 2, 4, 0],
+              }),
+              ...dm(4, [7], {
+                options: [14, 8, 9, 6, 5, 15, 13, 2, 4, 12, 0],
+              }),
+            ],
           }),
           q.input(8, 9, 'Nurodykite produkto pavadinimą', {
             riskEvaluation: false,
             hint: 'Nurodykite tikslų produkto pavadinimą (pvz. varškės sūrelis "XXXX")',
+            dynamicFields: [
+              ...dm(4, [0, 1], {
+                title: 'Nurodykite pašaro pavadinimą',
+                hint: 'Nurodykite tikslų pašaro pavadinimą (pvz. sausas šunų maistas „XXX“)',
+              }),
+              ...dm(4, [2, 3], {
+                title: 'Nurodykite veterinarinio vaisto pavadinimą',
+                hint: 'Nurodykite tikslų veterinarinio vaisto pavadinimą (pvz. ampulės „XXX“)',
+              }),
+            ],
           }),
           q.radio(9, undefined, 'Ar galite nurodyti gamintoją?', {
             riskEvaluation: false,
@@ -489,34 +799,105 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             riskEvaluation: false,
             condition: c(9),
           }),
+
           q.radio(10, undefined, 'Ar galite nurodyti importuotoją?', {
             riskEvaluation: false,
             options: [os('Taip', '10.1'), os('Ne', 11)],
+            dynamicFields: [
+              ...dm(4, [0, 1, 2, 3], {
+                title: 'Ar galite nurodyti tiekėją?',
+              }),
+              ...dm(4, [4, 5, 6, 7], {
+                condition: false,
+              }),
+            ],
           }),
           q.input('10.1', 11, 'Produkto importuotojas', {
             riskEvaluation: false,
             condition: c(10),
+            dynamicFields: [
+              ...dm(4, [0, 1, 2, 3], {
+                title: 'Produkto tiekėjas',
+              }),
+              ...dm(4, [4, 5, 6, 7], {
+                condition: false,
+              }),
+            ],
           }),
+
           q.date(11, '11.1', 'Nurodykite produktų tinkamumo vartoti terminą', {
             riskEvaluation: false,
+            dynamicFields: [
+              ...dm(4, [0, 1], {
+                title: 'Nurodykite pašarų tinkamumo vartoti terminą',
+              }),
+              ...dm(4, [2, 3], {
+                title: 'Nurodykite veterinarinių vaistų tinkamumo vartoti terminą',
+                required: false,
+              }),
+            ],
           }),
           q.input('11.1', '11.2', 'Nurodykite veiklos vykdymo vietos adresą', {
             riskEvaluation: false,
           }),
-          q.input('11.2', 12, 'Nurodykite veiklos vykdymo vietos pavadinimą', {
+          q.input('11.2', '12.0', 'Nurodykite veiklos vykdymo vietos pavadinimą', {
             riskEvaluation: false,
           }),
         ],
       },
 
       // =======================================
-      pages.informacija(12),
+      {
+        title: 'Veiklos informacija',
+        description: 'Pateikite papildomą informaciją',
+        dynamicFields: [
+          ...dm(4, [0, 1, 2, 3], {
+            title: 'Informacija apie prekybos vietą',
+          }),
+        ],
+        questions: [
+          ...helperVeiklos('12.0', 12, {
+            dynamicFields: [
+              ...dm(4, [4, 5, 6, 7], {
+                condition: false,
+              }),
+            ],
+          }),
+          q.location(12, 13, '', {
+            riskEvaluation: false,
+            dynamicFields: [
+              ...dm(4, [4, 5, 6, 7], {
+                title: 'Žemėlapyje nurodykite veiklos vykdymo vietą',
+              }),
+              ...dm(4, [0, 1, 2, 3], {
+                condition: false,
+              }),
+            ],
+          }),
+          q.input(13, 14, 'Nurodykite veiklos pavadinimą', {
+            riskEvaluation: false,
+            dynamicFields: [
+              ...dm(4, [0, 1, 2, 3], {
+                title: 'Nurodykite prekybos vietos pavadinimą',
+              }),
+            ],
+          }),
+          q.text(14, 15, 'Nurodykite veiklą vykdančius fizinius ar juridinius asmenis', {
+            riskEvaluation: false,
+            required: false,
+          }),
+        ],
+      },
 
       // =======================================
       pages.aplinkybes(15),
 
       // =======================================
-      pages.vaizdine(16),
+      {
+        ...pages.vaizdine(16),
+        description:
+          'Pridėkite vaizdinę medžiagą (nuotraukas, video) arba kitus dokumentus įrodančius pateikiamus pažeidimus. Pvz: įsigijimo čekis, produkto nuotraukos, ženklinimo informacija ir pan.',
+      },
 
       // =======================================
       pages.teises(18),
@@ -525,7 +906,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 
   // SURVEY 3
   {
-    title: 'Veterinarinės srities pranešimų',
+    title: 'Veterinarinės srities pranešimų anketa',
     icon: `<svg viewBox="0 0 55 54" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M25.084 13.5C27.5693 13.5 29.584 11.4853 29.584 9C29.584 6.51472 27.5693 4.5 25.084 4.5C22.5987 4.5 20.584 6.51472 20.584 9C20.584 11.4853 22.5987 13.5 25.084 13.5Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M40.834 22.5C43.3193 22.5 45.334 20.4853 45.334 18C45.334 15.5147 43.3193 13.5 40.834 13.5C38.3487 13.5 36.334 15.5147 36.334 18C36.334 20.4853 38.3487 22.5 40.834 22.5Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -546,19 +927,19 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.select(5, undefined, 'Pasirinkite dėl ko pranešate', {
             riskEvaluation: false,
             options: [
-              os('Dėl gyvūnų gerovės', '4.6'),
-              os('Dėl gyvūnų augintinių veisimo veiklos', '4.10'),
-              os('Dėl gyvūnų augintinių prekybos veiklos', '4.10'),
-              os('Dėl ūkinių gyvūnų prekybos veiklos', '4.11'),
-              os('Dėl gyvūnų transportavimo veiklos', '4.13'),
+              os('Dėl gyvūnų gerovės', '4.6'), // 0
+              os('Dėl gyvūnų augintinių veisimo veiklos', '4.10'), // 1
+              os('Dėl gyvūnų augintinių prekybos veiklos', '4.10'), // 2
+              os('Dėl ūkinių gyvūnų prekybos veiklos', '4.11'), // 3
+              os('Dėl gyvūnų transportavimo veiklos', '4.13'), // 4
               os(
                 'Dėl medžiojimo veiklos (veterinarinė priežiūra medžioklėje, pirminio apdorojimo aikštelės/patalpos, gyvūninių atliekų duobės)',
                 '4.13',
-              ),
-              os('Dėl šalutinių gyvūninių produktų tvarkymo veiklos', '4.13'),
-              os('Dėl Ūkininkavimo veiklos', '4.13'),
-              os('Dėl veterinarinių paslaugų veiklos', '4.13'),
-              os('Dėl kitos veterinarinės veiklos', '4.13'),
+              ), // 5
+              os('Dėl šalutinių gyvūninių produktų tvarkymo veiklos', '4.13'), // 6
+              os('Dėl ūkininkavimo veiklos', '4.13'), // 7
+              os('Dėl veterinarinių paslaugų veiklos', '4.13'), // 8
+              os('Dėl kitos veterinarinės veiklos', '4.13'), // 9
             ],
           }),
         ],
@@ -589,7 +970,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               os('Katės', 12),
               os('Šeškai', 12),
               os('Graužikai', 12),
-              os('Popliai', 12),
+              os('Ropliai', 12),
               os('Paukščiai', 12),
               os('Kita', '7.1'),
             ],
@@ -633,7 +1014,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               os('Katės', 13),
               os('Šeškai', 13),
               os('Graužikai', 13),
-              os('Popliai', 13),
+              os('Ropliai', 13),
               os('Paukščiai', 13),
               os('Kita', '10.1'),
             ],
@@ -675,32 +1056,71 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ]),
           }),
 
-          q.multiselect(13, 16, 'Pasirinkite apie kokius veiklos pažeidimus pranešate', {
+          q.multiselect(13, '13.1', 'Pasirinkite apie kokius veiklos pažeidimus pranešate', {
             options: o([
-              'Ženklinimo/registravimo pažeidimai',
-              'Vakcinacijos pažeidimai',
-              'Nepateikiama privalomoji informacija apie vykdomą veiklą',
-              'Vykdoma veikla be leidimų/registracijos',
-              'Netinkamos sveikatos būklės gyvūnai',
-              'Pardavinėjami per jauni gyvūnai',
-              'Laikymo sąlygų keliančių grėsmę gyvūnų sveikatai pažeidimai',
-              'Nėra užtikrinama gyvūnų gerovė, gyvūnais nepakankamai rūpinamasi, neužtikrinami jų fiziologiniai poreikiai, gyvūnai kitaip kankinami',
-              'Nesuteikiama reikalinga veterinarinė pagalba',
-              'Šėrimo/girdymo pažeidimai',
-              'Netinkamai pildomi veiklos dokumentai',
-              'Patalpos nehigieniškos, neatitinka nustatytų reikalavimų',
-              'Veikla be galiojančių veterinarijos praktikos licencijų',
-              'Veikla vykdoma neįsidiegus savikontrolės sistemos',
-              'Neužtikrinami biologinės saugos reikalavimai',
-              'Netinkamai tvarkomos atliekos',
-              'Darbuotojų higienos įgūdžių pažeidimai',
-              'Patalpos nehigieniškos, neatitinka nustatytų reikalavimų',
-              'Netinkamos veterinarinių vaistų/pašarų laikymo sąlygos',
-              'Kiti pažeidima',
+              'Kiti pažeidimai', // 0
+              'Laikymo sąlygų keliančių grėsmę gyvūnų sveikatai pažeidimai', // 1
+              'Nepakankamas plotas gyvūnų skaičiui', // 2
+              'Nepateikiama privalomoji informacija apie vykdomą veiklą', // 3
+              'Nesuteikiama reikalinga veterinarinė pagalba', // 4
+              'Netinkamai pildomi veiklos dokumentai', // 5
+              'Netinkamai tvarkomos atliekos', // 6
+              'Netinkamos sveikatos būklės gyvūnai', // 7
+              'Neužtikrinami biologinės saugos reikalavimai', // 8
+              'Nėra užtikrinama gyvūnų gerovė, gyvūnais nepakankamai rūpinamasi, neužtikrinami jų fiziologiniai poreikiai, gyvūnai kitaip kankinami', // 9
+              'Pardavinėjami per jauni gyvūnai', // 10
+              'Patalpos nehigieniškos, neatitinka nustatytų reikalavimų (panaikinti dublikatą, yra du vienodi pasirinkimai)', // 11
+              'Vakcinacijos pažeidimai', // 12
+              'Veikla be galiojančių veterinarijos praktikos licencijų', // 13
+              'Vykdoma veikla be leidimų/registracijos', // 14
+              'Šėrimo/girdymo pažeidimai', // 15
+              'Ženklinimo/registravimo pažeidimai', // 16
             ]),
+            dynamicFields: [
+              ...dm(5, [1], {
+                options: [16, 12, 7, 1, 9, 4, 15, 14, 11, 5, 3, 0, 2],
+              }),
+              ...dm(5, [2], {
+                options: [16, 12, 7, 10, 1, 9, 4, 15, 14, 11, 5, 3, 0, 2],
+              }),
+              ...dm(5, [3], {
+                options: [16, 7, 10, 1, 9, 4, 15, 14, 11, 8, 5, 3, 0, 2],
+              }),
+              ...dm(5, [4], {
+                options: [16, 1, 9, 4, 15, 14, 11, 8, 5, 0],
+              }),
+              ...dm(5, [5], {
+                options: [14, 11, 8, 6, 5, 0],
+              }),
+              ...dm(5, [6], {
+                options: [14, 11, 8, 5, 0],
+              }),
+              ...dm(5, [7], {
+                options: [16, 7, 1, 9, 4, 15, 14, 11, 8, 6, 5, 0, 2],
+              }),
+              ...dm(5, [8], {
+                options: [16, 1, 9, 4, 13, 14, 11, 8, 6, 5, 0],
+              }),
+              ...dm(5, [9], {
+                options: [14, 11, 8, 6, 5, 0],
+              }),
+            ],
           }),
 
-          q.location(14, 15, 'Nurodykite gyvūnų laikymo vietos adresą', {
+          q.text('13.1', '16.0', 'Nurodykite dėl kokios veiklos pranešate', {
+            dynamicFields: [
+              ...dm(5, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], {
+                condition: false,
+              }),
+            ],
+          }),
+        ],
+      },
+
+      {
+        title: 'Laikymo vietos informacija',
+        questions: [
+          q.location(14, 15, 'Žemėlapyje nurodykite gyvūno(-ų) laikymo vietą', {
             riskEvaluation: false,
           }),
 
@@ -712,16 +1132,65 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       },
 
       // =======================================
-      pages.informacija(
-        16,
-        {},
-        {
-          required: false,
-        },
-        {
-          required: false,
-        },
-      ),
+      {
+        title: 'Veiklos vietos informacija',
+        description: 'Pateikite papildomą informaciją',
+        dynamicFields: [
+          ...dm(5, [0], {
+            title: 'Veiklos informacija',
+          }),
+        ],
+        questions: [
+          q.input('16.0', '16.1', 'Nurodykite transporto priemonės valstybinius numerius', {
+            dynamicFields: [
+              // $ne: 4
+              ...dm(5, [0, 1, 2, 3, 5, 6, 7, 8, 9], {
+                condition: false,
+              }),
+            ],
+          }),
+          ...helperVeiklos('16.1', 16, {
+            dynamicFields: [
+              // $ne: 3, 2
+              ...dm(5, [0, 1, 4, 5, 6, 7, 8, 9], {
+                condition: false,
+              }),
+            ],
+          }),
+          q.location(16, 17, 'Žemėlapyje nurodykite veiklos vykdymo vietą', {
+            riskEvaluation: false,
+            dynamicFields: [
+              ...dm(5, [3, 2], {
+                condition: false,
+              }),
+            ],
+          }),
+          q.input(17, 18, 'Nurodykite veiklos pavadinimą', {
+            riskEvaluation: false,
+            required: true,
+            dynamicFields: [
+              ...dm(5, [5], {
+                title: 'Nurodykite medžioklės plotų vieneto pavadinimą',
+              }),
+              ...dm(5, [4, 6, 7, 8, 9], {
+                required: false,
+              }),
+            ],
+          }),
+          q.text(18, 19, 'Nurodykite veiklą vykdančius fizinius ar juridinius asmenis', {
+            riskEvaluation: false,
+            required: true,
+            dynamicFields: [
+              ...dm(5, [5], {
+                title: 'Nurodykite pažeidimus vykdančius fizinius asmenis',
+              }),
+              ...dm(5, [4, 6, 7, 8, 9], {
+                required: false,
+              }),
+            ],
+          }),
+        ],
+      },
 
       // =======================================
       pages.aplinkybes(19, {
@@ -729,7 +1198,11 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       }),
 
       // =======================================
-      pages.vaizdine(20),
+      {
+        ...pages.vaizdine(20),
+        description:
+          'Pridėkite vaizdinę medžiagą (nuotraukas, video) arba kitus dokumentus įrodančius pateikiamus pažeidimus. Pvz: įsigijimo čekis, produkto nuotraukos, ženklinimo informacija ir pan.',
+      },
 
       // =======================================
       pages.teises(22),
@@ -757,15 +1230,26 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         ...pages.detales(),
         questions: [
-          q.date(4, 5, 'Nurodykite pranešamo įvykio datą'),
+          q.date(4, 5, 'Nurodykite produktų ar patiekalų įsigijimo/gavimo datą'),
           q.datetime(
             5,
-            6,
+            '5.1',
             'Nurodykite produkto sukėlusio sveikatos sutrikimus vartojimo datą ir laiką',
             {
               riskEvaluation: false,
             },
           ),
+          q.select('5.1', 6, 'Nurodykite vartotų produktų patiekalų rūšį', {
+            required: true,
+            options: o([
+              'Gyvūninės kilmės produktai/patiekalai',
+              'Negyvūninės kilmės produktai patiekalai',
+              'Nealkoholiniai gėrimai',
+              'Alkoholiniai gėrimai',
+              'Maisto papildai',
+              'Specialiosios paskirties maisto produktai',
+            ]),
+          }),
           q.datetime(6, 7, 'Nurodykite pirmųjų simptomų pasireiškimo datą ir laiką'),
           q.text(7, 8, 'Nurodykite pasireiškusius simptomus'),
           q.radio(8, 9, 'Ar maistas buvo vartojamas organizuotame renginyje?', {
@@ -801,13 +1285,22 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         ...pages.papildoma(),
         questions: [
-          q.location(14, 15, 'Nurodykite produkto įsigijimo/vartojimo vietos adresą', {
+          q.location(14, 15, 'Žemėlapyje nurodykite produktų įsigijimo/tiekimo vietą', {
             riskEvaluation: false,
           }),
-          q.input(15, 16, 'Nurodykite vietos pavadinimą', { riskEvaluation: false }),
-          q.text(16, 17, 'Nurodykite veiklą vykdančius fizinius ar juridinius asmenis', {
+          q.input(15, 16, 'Nurodykite vietos pavadinimą', {
             riskEvaluation: false,
+            required: false,
           }),
+          q.text(
+            16,
+            17,
+            'Nurodykite už produktų tiekimą/pardavimą atsakingus fizinius ar juridinius asmenis',
+            {
+              required: false,
+              riskEvaluation: false,
+            },
+          ),
         ],
       },
 
@@ -835,7 +1328,11 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       ),
 
       // =======================================
-      pages.vaizdine(20),
+      {
+        ...pages.vaizdine(20),
+        description:
+          'Pridėkite vaizdinę medžiagą (nuotraukas, video) arba kitus dokumentus įrodančius pateikiamus pažeidimus. Pvz: įsigijimo čekis, produkto nuotraukos, ženklinimo informacija ir pan.',
+      },
 
       // =======================================
       pages.teises(22),
@@ -887,7 +1384,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 
   // SURVEY 6
   {
-    title: 'Rastų gaišenų pranešimai',
+    title: 'Įtarimų dėl gyvūnų ligų pranešimų anketa',
     icon: `<svg viewBox="0 0 55 54" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M15.3418 49.5V43.4925C15.3418 40.32 16.6018 37.26 18.8518 35.01C21.1018 32.76 24.1618 31.5 27.3343 31.5C33.9718 31.5 39.3268 36.8775 39.3268 43.4925V49.5H15.3418Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M44.5918 38.9927V34.4927" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -915,13 +1412,13 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       pages.kontaktiniai(
         1,
         {
-          required: false,
+          required: true,
           riskEvaluation: false,
           authRelation: null,
         },
         [
           q.input(2, '2.0', 'Prašome nurodyti savo kontaktinį telefono numerį', {
-            required: false,
+            required: true,
             riskEvaluation: false,
           }),
         ],
@@ -931,27 +1428,92 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         ...pages.detales(),
         questions: [
-          q.date('2.0', 3, 'Nurodykite pranešamo įvykio datą'),
+          q.date('2.0', '3.1', 'Nurodykite pranešamo įvykio datą'),
 
-          q.multiselect(3, undefined, 'Pasirinkite kokią gaišeną radote', {
+          q.multiselect('3.1', undefined, 'Pasirinkite gyvūno tipą', {
             riskEvaluation: false,
             options: [
-              os('Paukštis', 4),
-              os('Šernas', 4),
-              os('Lapė', 4),
-              os('Ūsūrinis šuo', 4),
-              os('Ūkinis gyvūnas', 4),
-              os('Gyvūnas augintinis', 4),
-              os('Kita', '3.1'),
+              os('Ūkiniai gyvūnai', '3.1.8'),
+              os('Gyvūnai augintiniai', '3.1.7'),
+              os('Laukiniai gyvūnai', '3.1.9'),
             ],
           }),
 
-          q.input('3.1', 4, 'Įveskite pavadinimą', {
+          q.multiselect('3.1.7', undefined, 'Pasirinkite gyvūno augintinio rūšį', {
             riskEvaluation: false,
-            condition: c(3),
+            options: [
+              os('Šunys', '3.2'),
+              os('Katės', '3.2'),
+              os('Šeškai', '3.2'),
+              os('Graužikai', '3.2'),
+              os('Ropliai', '3.2'),
+              os('Paukščiai', '3.2'),
+              os('Kita', '3.1.7.1'),
+            ],
+            condition: c('3.1'),
+          }),
+
+          q.input('3.1.7.1', '3.2', 'Įveskite gyvūno augintinio rūšį', {
+            riskEvaluation: false,
+            condition: c('3.1.7'),
+          }),
+
+          q.multiselect('3.1.8', undefined, 'Pasirinkite ūkinio gyvūno rūšį', {
+            condition: c('3.1'),
+            riskEvaluation: false,
+            options: [
+              os('Galvijai', '3.2'),
+              os('Arkliai', '3.2'),
+              os('Avys', '3.2'),
+              os('Ožkos', '3.2'),
+              os('Kiaulės', '3.2'),
+              os('Paukščiai', '3.2'),
+              os('Bitės', '3.2'),
+              os('Kita', '3.1.8.1'),
+            ],
+          }),
+
+          q.input('3.1.8.1', '3.2', 'Įveskite ūkinio gyvūno rūšį', {
+            riskEvaluation: false,
+            condition: c('3.1.8'),
+          }),
+
+          q.multiselect('3.1.9', undefined, 'Pasirinkite laukinio gyvūno rūšį', {
+            condition: c('3.1'),
+            riskEvaluation: false,
+            options: [
+              os('Paukštis', '3.2'),
+              os('Šernas', '3.2'),
+              os('Lapė', '3.2'),
+              os('Usūrinis šuo', '3.2'),
+              os('Kita', '3.1.9.1'),
+            ],
+          }),
+
+          q.input('3.1.9.1', '3.2', 'Įveskite laukinio gyvūno rūšį', {
+            riskEvaluation: false,
+            condition: c('3.1.9'),
+          }),
+
+          q.radio('3.2', undefined, 'Pasirinkite apie ką pranešate', {
+            riskEvaluation: false,
+            options: [os('Gyvūnų gaišenos', 4), os('Gyvūnų ligos', '3.3')],
+          }),
+
+          q.text('3.3', '3.4', 'Aprašykite gyvūno(-ų) simptomatiką', {
+            condition: c('3.2'),
+          }),
+
+          q.location('3.4', 5, 'Nurodykite gyvūno(-ų) laikymo vietą', {
+            condition: {
+              question: '3.2',
+              valueIndex: 1,
+            },
+            riskEvaluation: false,
           }),
 
           q.location(4, 5, 'Nurodykite gaišenos radimo vietą', {
+            condition: c('3.2'),
             riskEvaluation: false,
           }),
         ],
@@ -993,13 +1555,22 @@ export default class SeedService extends moleculer.Service {
       let firstPage: Page['id'];
 
       // 1 - first step: create pages with partial questions
-      for (const { questions = [], ...pageData } of pages) {
+      for (const pageItem of pages) {
+        const { questions = [], dynamicFields, ...pageData } = pageItem;
         const page: Page = await this.broker.call('pages.create', pageData);
+        pageItem.id = page.id;
 
         firstPage ||= page.id;
 
         for (const item of questions) {
-          const { options, id: excelId, nextQuestion, condition, ...questionData } = item;
+          const {
+            options,
+            id: excelId,
+            nextQuestion,
+            condition,
+            dynamicFields,
+            ...questionData
+          } = item;
 
           const question: Question = await this.broker.call('questions.create', {
             ...questionData,
@@ -1019,8 +1590,46 @@ export default class SeedService extends moleculer.Service {
       });
 
       // 3 - third step: update questions missing data and options
-      for (const { questions = [] } of pages) {
-        for (const { options = [], id: excelId, nextQuestion, condition } of questions) {
+      for (const { questions = [], id: pageId, dynamicFields } of pages) {
+        if (dynamicFields) {
+          await this.broker.call('pages.update', {
+            id: pageId,
+            dynamicFields: dynamicFields.map((df) => ({
+              condition: {
+                question: questionByExcelId[df.condition.question].id,
+                value:
+                  df.condition.value !== undefined
+                    ? df.condition.value
+                    : questionByExcelId[df.condition.question].options[df.condition.valueIndex].id,
+              },
+              values: df.values,
+            })),
+          });
+        }
+
+        for (const {
+          options = [],
+          id: excelId,
+          nextQuestion,
+          condition,
+          dynamicFields,
+        } of questions) {
+          const qOptions: QuestionOption[] = [];
+          for (const optionItem of options) {
+            const { nextQuestion, ...optionData } = optionItem;
+            if (nextQuestion && !questionByExcelId[nextQuestion]) {
+              console.error(nextQuestion, survey, excelId);
+            }
+            const option: QuestionOption = await this.broker.call('questionOptions.create', {
+              ...optionData,
+              question: questionByExcelId[excelId].id,
+              priority: options.length - options.indexOf(optionItem),
+              nextQuestion: nextQuestion ? questionByExcelId[nextQuestion].id : undefined,
+            });
+
+            qOptions.push(option);
+          }
+
           const question: Question<'options'> = await this.broker.call('questions.update', {
             id: questionByExcelId[excelId].id,
             survey: survey.id,
@@ -1029,29 +1638,42 @@ export default class SeedService extends moleculer.Service {
               ? {
                   question: questionByExcelId[condition.question].id,
                   value:
-                    condition.value ||
-                    questionByExcelId[condition.question].options.find(
-                      (o) => o.nextQuestion === questionByExcelId[excelId].id,
-                    ).id,
+                    condition.value !== undefined
+                      ? condition.value
+                      : condition.valueIndex !== undefined
+                      ? questionByExcelId[condition.question].options[condition.valueIndex].id
+                      : questionByExcelId[condition.question].options.find(
+                          (o) => o.nextQuestion === questionByExcelId[excelId].id,
+                        ).id,
                 }
               : undefined,
+            dynamicFields: dynamicFields?.map((df) => {
+              const values = df.values;
+
+              for (const field in values) {
+                if (field === 'options' && values.options && Array.isArray(values.options)) {
+                  // @ts-ignore
+                  values.options = (values.options as Array<number>).map((option) => {
+                    return qOptions[option].id;
+                  });
+                }
+              }
+
+              return {
+                condition: {
+                  question: questionByExcelId[df.condition.question].id,
+                  value:
+                    df.condition.value !== undefined
+                      ? df.condition.value
+                      : questionByExcelId[df.condition.question].options[df.condition.valueIndex]
+                          .id,
+                },
+                values,
+              };
+            }),
           });
 
-          question.options = [];
-          for (const optionItem of options) {
-            const { nextQuestion, ...optionData } = optionItem;
-            if (nextQuestion && !questionByExcelId[nextQuestion]) {
-              console.error(nextQuestion, survey, excelId);
-            }
-            const option: QuestionOption = await this.broker.call('questionOptions.create', {
-              ...optionData,
-              question: question.id,
-              priority: options.length - options.indexOf(optionItem),
-              nextQuestion: nextQuestion ? questionByExcelId[nextQuestion].id : undefined,
-            });
-
-            question.options.push(option);
-          }
+          question.options = qOptions;
 
           questionByExcelId[excelId] = question;
         }

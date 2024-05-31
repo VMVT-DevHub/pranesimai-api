@@ -4,6 +4,7 @@ import { Action, Method, Service } from 'moleculer-decorators';
 import ApiGateway, { IncomingRequest, Route } from 'moleculer-web';
 import { EndpointType } from '../types';
 import { Session } from './sessions.service';
+import { Survey } from './surveys.service';
 
 export interface MetaSession {
   session?: Session;

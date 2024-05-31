@@ -16,6 +16,11 @@ export enum FileTypes {
   JPEG = 'image/jpeg',
   JPG = 'image/jpg',
   PDF = 'application/pdf',
+  MP4 = 'video/mp4',
+  AVI = 'video/x-msvideo',
+  MOV = 'video/quicktime',
+  DOC = 'application/msword',
+  DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 }
 
 export const DefaultFileTypes: string[] = Object.values(FileTypes);

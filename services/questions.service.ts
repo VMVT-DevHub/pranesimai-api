@@ -11,7 +11,9 @@ import {
   COMMON_DEFAULT_SCOPES,
   COMMON_FIELDS,
   COMMON_SCOPES,
+  DYNAMIC_FIELDS,
   Table,
+  DynamicFields,
 } from '../types';
 import { QuestionOption } from './questionOptions.service';
 import { Survey } from './surveys.service';
@@ -60,7 +62,11 @@ interface Fields extends CommonFields {
     question: Question['id'];
     value: any;
   };
+  dynamicFields: DynamicFields<
+    Omit<Question, 'options'> & { options: Array<QuestionOption['id']> }
+  >;
   options: undefined;
+  spField?: string;
 }
 
 interface Populates extends CommonPopulates {
@@ -150,6 +156,13 @@ export type Question<
           value: 'any',
         },
       },
+
+      spField: {
+        type: 'string',
+        readonly: true,
+      },
+
+      ...DYNAMIC_FIELDS,
 
       nextQuestion: {
         type: 'number',
