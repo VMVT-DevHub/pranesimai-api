@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build & tag docker image
-        uses: AplinkosMinisterija/reusable-workflows/.github/actions/docker-build-tag-push@main
+        uses: vmvt-devhub/reusable-workflows/.github/actions/docker-build-tag-push@main
         with:
           environment: test
           push: true

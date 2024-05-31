@@ -29,6 +29,7 @@ interface Fields extends CommonFields {
   priority: number;
   firstPage: Page['id'];
   authType: SurveyAuthType;
+  spList?: string;
 }
 
 interface Populates extends CommonPopulates {
@@ -38,6 +39,7 @@ interface Populates extends CommonPopulates {
 interface MermaidFeatures extends Record<string, boolean> {
   conditions: boolean;
   dynamicFields: boolean;
+  spField: boolean;
 }
 
 export type Survey<
@@ -71,6 +73,11 @@ export type Survey<
       priority: {
         type: 'number',
         default: 0,
+      },
+
+      spList: {
+        type: 'string',
+        readonly: true,
       },
 
       firstPage: {
@@ -146,7 +153,7 @@ export default class SurveysService extends moleculer.Service {
     rest: 'GET /mermaid',
     params: {
       id: 'number|convert|optional',
-      ...['conditions', 'dynamicFields'].reduce(
+      ...['conditions', 'dynamicFields', 'spField'].reduce(
         (acc, curr) => ({
           ...acc,
           [curr]: {
@@ -209,6 +216,7 @@ export default class SurveysService extends moleculer.Service {
           ? 'pasirinktinai'
           : 'privalom'
       }</div>
+<div><b>spList:</b> ${survey.spList || '-'}</div>
 
       <div style="margin-top: 50px">
       <b>Features (kai kurias diagramas labai iškraipo)</b>
@@ -279,6 +287,7 @@ flowchart TB;
     .map((option) => `option-${this.mermaidIdWithTitle(option.id, option.title)}`)
     .join('\n  ')}
  ${!question.required ? `optional-${question.id}>Neprivalomas];` : ''}
+ ${features.spField && question.spField ? `spField-${question.id}[/${question.spField}\\];` : ''}
  ${
    features.conditions && question.condition?.question
      ? `condition-${question.id}{{Rodomas jei}};`

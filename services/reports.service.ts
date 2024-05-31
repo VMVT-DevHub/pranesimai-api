@@ -31,8 +31,9 @@ interface Fields extends CommonFields {
     title: Question['title'];
     answer: any;
     type: QuestionType;
-    required: boolean;
-    riskEvaluation: boolean;
+    required: Question['required'];
+    riskEvaluation: Question['riskEvaluation'];
+    spField: Question['spField'];
   }>;
   csv: string;
 }
@@ -179,6 +180,7 @@ export default class ReportsService extends moleculer.Service {
           type: question.type,
           required: question.required,
           riskEvaluation: question.riskEvaluation,
+          spField: question.spField,
         });
       }
     }

@@ -90,7 +90,7 @@ export type Response<
 
               if (dynamicFields) {
                 const { values: prevValues } = await this.resolveEntities(ctx, {
-                  id: response.previousResponseId,
+                  id: response.id,
                   fields: 'values',
                 });
 
@@ -125,30 +125,42 @@ export type Response<
         populate(ctx: Context, _values: any, responses: any[]) {
           return Promise.all(
             responses.map(async (response) => {
-              const questions: Question[] = await ctx.call('questions.resolve', {
+              const questions: Question<'options'>[] = await ctx.call('questions.resolve', {
                 id: response.questions,
                 populate: 'options',
               });
 
               const { values: prevValues } = await this.resolveEntities(ctx, {
-                id: response.previousResponseId,
+                id: response.id,
                 fields: 'values',
               });
 
-              return questions.map(({ dynamicFields, ...question }) => {
-                if (dynamicFields) {
-                  dynamicFields.forEach((df) => {
-                    if (prevValues[df.condition.question] === df.condition.value) {
-                      question = {
-                        ...question,
-                        ...df.values,
-                      };
-                    }
-                  });
-                }
+              return questions
+                .map(({ dynamicFields, ...question }) => {
+                  if (dynamicFields) {
+                    dynamicFields.forEach((df) => {
+                      if (prevValues[df.condition.question] === df.condition.value) {
+                        const values = df.values;
 
-                return question;
-              });
+                        if (Array.isArray(values.options)) {
+                          // @ts-ignore
+                          values.options = values.options
+                            .filter((id) => question.options.find((o) => o.id === id))
+                            .map((id) => question.options.find((o) => o.id === id));
+                        }
+
+                        // @ts-ignore
+                        question = {
+                          ...question,
+                          ...values,
+                        };
+                      }
+                    });
+                  }
+
+                  return question;
+                })
+                .filter((question) => (question.condition as any) !== false);
             }),
           );
         },

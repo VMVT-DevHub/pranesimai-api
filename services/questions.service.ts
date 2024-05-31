@@ -62,8 +62,11 @@ interface Fields extends CommonFields {
     question: Question['id'];
     value: any;
   };
-  dynamicFields: DynamicFields<Question>;
+  dynamicFields: DynamicFields<
+    Omit<Question, 'options'> & { options: Array<QuestionOption['id']> }
+  >;
   options: undefined;
+  spField?: string;
 }
 
 interface Populates extends CommonPopulates {
@@ -152,6 +155,11 @@ export type Question<
           question: 'number',
           value: 'any',
         },
+      },
+
+      spField: {
+        type: 'string',
+        readonly: true,
       },
 
       ...DYNAMIC_FIELDS,
