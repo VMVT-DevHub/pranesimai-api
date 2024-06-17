@@ -40,6 +40,7 @@ interface MermaidFeatures extends Record<string, boolean> {
   conditions: boolean;
   dynamicFields: boolean;
   spField: boolean;
+  type: boolean;
 }
 
 export type Survey<
@@ -77,7 +78,6 @@ export type Survey<
 
       spList: {
         type: 'string',
-        readonly: true,
       },
 
       firstPage: {
@@ -153,7 +153,7 @@ export default class SurveysService extends moleculer.Service {
     rest: 'GET /mermaid',
     params: {
       id: 'number|convert|optional',
-      ...['conditions', 'dynamicFields', 'spField'].reduce(
+      ...['conditions', 'dynamicFields', 'spField', 'type'].reduce(
         (acc, curr) => ({
           ...acc,
           [curr]: {
@@ -293,6 +293,7 @@ flowchart TB;
      ? `condition-${question.id}{{Rodomas jei}};`
      : ''
  }
+${features.type ? `type-${question.id}{{${question.type}}};` : ''}
  ${
    features.dynamicFields && question.dynamicFields?.length
      ? `dynamic-${question.id}[/"${question.dynamicFields

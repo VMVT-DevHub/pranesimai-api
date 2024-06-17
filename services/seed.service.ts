@@ -12,6 +12,7 @@ type SurveyTemplate = {
   description?: Survey['description'];
   icon: Survey['icon'];
   authType: SurveyAuthType;
+  spList: Survey['spList'];
   pages: Array<{
     id?: Page['id'];
     title: Page['title'];
@@ -30,6 +31,7 @@ type SurveyTemplate = {
       type: Question['type'];
       title: Question['title'];
       hint?: Question['hint'];
+      spField?: Question['spField'];
       description?: Question['description'];
       required: Question['required'];
       riskEvaluation: Question['riskEvaluation'];
@@ -55,8 +57,8 @@ type SurveyTemplate = {
   }>;
 };
 
-type SurveyTemplatePage = SurveyTemplate['pages'][0];
-type SurveyTemplateQuestion = SurveyTemplatePage['questions'][0];
+type SurveyTemplatePage = SurveyTemplate['pages'][number];
+type SurveyTemplateQuestion = SurveyTemplatePage['questions'][number];
 type QuestionExtends = Partial<SurveyTemplateQuestion>;
 
 const q = (
@@ -123,14 +125,17 @@ const os = (title: string, nextQuestion?: number | string) => ({
 const helperVeiklos = (id: number | string, idOut: number | string, qa: QuestionExtends = {}) => [
   q.radio(id, undefined, 'Nurodykite prekybos būdą', {
     options: [os('Fizinėje prekybos vietoje', `${id}.1`), os('Internetu', `${id}.2`)],
+    spField: 'PrekybosBudas',
     ...qa,
   }),
   q.location(`${id}.1`, idOut, 'Žemėlapyje nurodykite pardavimo vietą', {
     condition: c(id),
+    spField: 'Koordinates',
     ...qa,
   }),
   q.input(`${id}.2`, idOut, 'Pateikite nuoroda į internetinės prekybos puslapį', {
     condition: c(id),
+    spField: 'PapInfo',
     ...qa,
   }),
 ];
@@ -147,6 +152,7 @@ const pages = {
       q.input(id, id + 1, 'El. pašto adresas', {
         riskEvaluation: false,
         authRelation: AuthRelation.EMAIL,
+        spField: 'PranElPastas',
         ...q1,
       }),
       ...additionalQuestinos,
@@ -207,6 +213,7 @@ const pages = {
         {
           required: false,
           riskEvaluation: false,
+          spField: 'Aplinkybes',
           ...q1,
         },
       ),
@@ -221,11 +228,13 @@ const pages = {
     questions: [
       q.radio(id, undefined, 'Ar galite pateikti įrodymų apie pranešamus pažeidimus?', {
         options: [os('Taip', id + 1), os('Ne', id + 2)],
+        spField: 'Irodymai',
         ...q1,
       }),
       q.files(id + 1, id + 2, 'Pridėkite vaizdinę ar kitą medžiagą', {
         riskEvaluation: false,
         condition: c(id),
+        spField: 'Attachments',
         ...q2,
       }),
     ],
@@ -257,6 +266,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M33.2923 30.375L38.4448 32.625C40.0873 33.3 41.1673 34.2 41.1673 36V43.875C41.1673 47.7225 40.0423 49.5 35.5423 49.5C31.5063 49.3113 27.6627 47.7198 24.6748 45" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M41.167 36.0002C44.6545 36.0002 50.167 35.4602 50.167 40.5002C50.167 45.0002 45.2845 46.1252 41.167 46.1252" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
+    spList: 'MSPranesimai',
     description:
       'Pranešimai apie neatitikimus maisto produktų kokybei, saugai, įskaitant maisto produktų, jų tiekėjų ar viešojo maitinimo įstaigų veiklą. Taip pat pranešimai apie nelegalią veiklą, susijusią su maisto produktų gamyba, platinimu ar pardavimu.',
     authType: SurveyAuthType.OPTIONAL,
@@ -280,6 +290,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               os('Dėl suteiktų viešojo maitinimo paslaugų', 8), // 3
               os('Dėl vykdomos maisto tvarkymo veiklos pažeidimų', 9), // 4
             ],
+            spField: 'Pranešimo tema',
           }),
         ],
       },
@@ -317,11 +328,21 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           },
         ],
         questions: [
-          q.date(5, 10, 'Nurodykite produktų įsigijimo datą'),
-          q.date(6, 10, 'Nurodykite produktų pastebėjimo prekybos vietoje datą'),
-          q.date(7, 11, 'Nurodykite patiekalų įsigijimo datą'),
-          q.date(8, 11, 'Nurodykite paslaugų suteikimo datą'),
-          q.date(9, 12, 'Nurodykite pranešamų pažeidimų pastebėjimo datą'),
+          q.date(5, 10, 'Nurodykite produktų įsigijimo datą', {
+            spField: 'IvykioData',
+          }),
+          q.date(6, 10, 'Nurodykite produktų pastebėjimo prekybos vietoje datą', {
+            spField: 'IvykioData',
+          }),
+          q.date(7, 11, 'Nurodykite patiekalų įsigijimo datą', {
+            spField: 'IvykioData',
+          }),
+          q.date(8, 11, 'Nurodykite paslaugų suteikimo datą', {
+            spField: 'IvykioData',
+          }),
+          q.date(9, 12, 'Nurodykite pranešamų pažeidimų pastebėjimo datą', {
+            spField: 'IvykioData',
+          }),
           q.select(10, 13, 'Pasirinkite produkto tipą', {
             options: o([
               'Greitai gendantys produktai',
@@ -330,6 +351,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               'Maisto papildai',
               'Specialios paskirties maisto produktai',
             ]),
+            spField: 'ProduktoTipas',
           }),
           q.select(11, 14, 'Pasirinkite viešojo maitinimo veiklos tipą', {
             riskEvaluation: false,
@@ -344,6 +366,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               'Vaikų stovyklų maitinimo veikla',
               'Kita viešojo maitinimo veikla',
             ]),
+            spField: 'VeiklosTipas',
           }),
           q.select(12, 15, 'Pasirinkite veiklos tipą', {
             riskEvaluation: false,
@@ -372,6 +395,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               'Žaliavinio pieno supirkimo punkto, surinkimo centro veikla',
               'Kita veikla',
             ]),
+            spField: 'VeiklosTipas',
           }),
           q.multiselect(13, 16, 'Pasirinkite apie kokius produkto pažeidimus pranešate', {
             options: o([
@@ -386,6 +410,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               'Reklamos pažeidimai',
               'Kiti pažeidimai',
             ]),
+            spField: 'PazTipas5',
           }),
           q.multiselect(14, 20, 'Pasirinkite apie kokius pažeidimus pranešate', {
             options: o([
@@ -402,8 +427,9 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               'Sudarytas meniu neatitinka reikalavimų',
               'Kiti pažeidima',
             ]),
+            spField: 'PazTipas5',
           }),
-          q.multiselect(15, '21.0', 'Pasirinkite apie kokius veklos pažeidimus pranešate', {
+          q.multiselect(15, '21.0', 'Pasirinkite apie kokius veiklos pažeidimus pranešate', {
             options: o([
               'Vykdoma veikla be leidimų/registracijos',
               'Netinkamos produktų, patiekalų laikymo sąlygos',
@@ -424,10 +450,12 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               'Kainų, kiekių, tūrio, svorio neatitikimai',
               'Kiti pažeidima',
             ]),
+            spField: 'PazTipas5',
           }),
           q.input(16, 17, 'Nurodykite produkto pavadinimą', {
             riskEvaluation: false,
             hint: 'Nurodykite tikslų produkto pavadinimą (pvz. varškės sūrelis "XXXX")',
+            spField: 'Pavadinimas',
           }),
           q.radio(17, undefined, 'Ar galite nurodyti gamintoją?', {
             riskEvaluation: false,
@@ -436,6 +464,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.input('17.1', 18, 'Produkto gamintojas', {
             riskEvaluation: false,
             condition: c(17),
+            spField: 'Gamintojas',
           }),
           q.radio(18, undefined, 'Ar galite nurodyti importuotoją?', {
             riskEvaluation: false,
@@ -483,6 +512,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
                 },
               },
             ],
+            spField: 'Tiekejas',
           }),
           q.date(19, '21.0', 'Nurodykite produktų tinkamumo vartoti terminą', {
             riskEvaluation: false,
@@ -498,6 +528,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
                 },
               },
             ],
+            spField: 'TinkTerm',
           }),
           q.input(20, '21.0', 'Nurodykite patiekalo pavadinimą', {
             riskEvaluation: false,
@@ -506,6 +537,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
                 required: false,
               }),
             ],
+            spField: 'Pavadinimas',
           }),
         ],
       },
@@ -537,6 +569,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
                 condition: false,
               }),
             ],
+            spField: 'Koordinates',
           }),
           q.input(22, 23, 'Nurodykite veiklos pavadinimą', {
             riskEvaluation: false,
@@ -548,10 +581,12 @@ const SURVEYS_SEED: SurveyTemplate[] = [
                 title: 'Nurodykite paslaugų suteikimo vietos pavadinimą',
               }),
             ],
+            spField: 'VeiklosPavadinimas',
           }),
           q.text(23, 24, 'Nurodykite veiklą vykdančius fizinius ar juridinius asmenis', {
             riskEvaluation: false,
             required: false,
+            spField: 'VeikVykdAsmenys',
           }),
         ],
       },
@@ -579,6 +614,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M19.125 19.125L34.875 34.875" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
     `,
+    spList: 'PVVpranesimai',
     authType: SurveyAuthType.OPTIONAL,
     description:
       'Pranešimai apie pašarus ir veterinarinius vaistus, jų kokybės, saugos, ženklinimo ir kitus pažeidimus, nelegalią šių produktų gamybą, tiekimą. Pranešimai apie pašarų ir veterinarinės farmacijos ūkio subjektų veiklos pažeidimus.',
@@ -592,6 +628,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
         questions: [
           q.select(4, undefined, 'Pasirinkite dėl ko pranešate', {
             riskEvaluation: false,
+            spField: 'PranesimoTema',
             options: [
               os('Dėl įsigytų pašarų', 5), // 0
               os('Dėl pastebėtų prekybos vietoje pašarų', 6), // 1
@@ -648,8 +685,11 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           },
         ],
         questions: [
-          q.date('5.0.pre', '5.0', 'Nurodykite pažeidimų pastebėjimo datą'),
+          q.date('5.0.pre', '5.0', 'Nurodykite pažeidimų pastebėjimo datą', {
+            spField: 'IvykioData',
+          }),
           q.multiselect('5.0', '12.0', 'Nurodykite kokius veiklos pažeidimus pranešate', {
+            spField: 'PazTipas5',
             riskEvaluation: false,
             options: o([
               'Kiti pažeidimai', // 0
@@ -697,6 +737,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ],
           }),
           q.date(5, 6, 'Nurodykite produktų įsigijimo datą', {
+            spField: 'IvykioData',
             dynamicFields: [
               {
                 condition: {
@@ -719,6 +760,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ],
           }),
           q.date(6, 7, 'Nurodykite produktų pastebėjimo prekybos vietoje datą', {
+            spField: 'IvykioData',
             dynamicFields: [
               ...dm(4, [1], {
                 title: 'Nurodykite pašarų pastebėjimo prekybos vietoje datą',
@@ -732,6 +774,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ],
           }),
           q.multiselect(7, 8, 'Pasirinkite apie kokius pažeidimus pranešate', {
+            spField: 'PazTipas5',
             options: o([
               'Kiti pažeidimai', // 0
               'Kokybės pažeidimai', // 1
@@ -778,6 +821,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ],
           }),
           q.input(8, 9, 'Nurodykite produkto pavadinimą', {
+            spField: 'Pavadinimas',
             riskEvaluation: false,
             hint: 'Nurodykite tikslų produkto pavadinimą (pvz. varškės sūrelis "XXXX")',
             dynamicFields: [
@@ -796,6 +840,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             options: [os('Taip', '9.1'), os('Ne', 10)],
           }),
           q.input('9.1', 10, 'Produkto gamintojas', {
+            spField: 'Gamintojas',
             riskEvaluation: false,
             condition: c(9),
           }),
@@ -815,6 +860,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.input('10.1', 11, 'Produkto importuotojas', {
             riskEvaluation: false,
             condition: c(10),
+            spField: 'Tiekejas',
             dynamicFields: [
               ...dm(4, [0, 1, 2, 3], {
                 title: 'Produkto tiekėjas',
@@ -825,8 +871,9 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ],
           }),
 
-          q.date(11, '11.1', 'Nurodykite produktų tinkamumo vartoti terminą', {
+          q.date(11, '12.0', 'Nurodykite produktų tinkamumo vartoti terminą', {
             riskEvaluation: false,
+            spField: 'TinkTerm',
             dynamicFields: [
               ...dm(4, [0, 1], {
                 title: 'Nurodykite pašarų tinkamumo vartoti terminą',
@@ -836,12 +883,6 @@ const SURVEYS_SEED: SurveyTemplate[] = [
                 required: false,
               }),
             ],
-          }),
-          q.input('11.1', '11.2', 'Nurodykite veiklos vykdymo vietos adresą', {
-            riskEvaluation: false,
-          }),
-          q.input('11.2', '12.0', 'Nurodykite veiklos vykdymo vietos pavadinimą', {
-            riskEvaluation: false,
           }),
         ],
       },
@@ -865,6 +906,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           }),
           q.location(12, 13, '', {
             riskEvaluation: false,
+            spField: 'Koordinates',
             dynamicFields: [
               ...dm(4, [4, 5, 6, 7], {
                 title: 'Žemėlapyje nurodykite veiklos vykdymo vietą',
@@ -876,6 +918,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           }),
           q.input(13, 14, 'Nurodykite veiklos pavadinimą', {
             riskEvaluation: false,
+            spField: 'VeiklosPavadinimas',
             dynamicFields: [
               ...dm(4, [0, 1, 2, 3], {
                 title: 'Nurodykite prekybos vietos pavadinimą',
@@ -885,6 +928,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.text(14, 15, 'Nurodykite veiklą vykdančius fizinius ar juridinius asmenis', {
             riskEvaluation: false,
             required: false,
+            spField: 'VeikVykdAsmenys',
           }),
         ],
       },
@@ -913,6 +957,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M45.334 40.5C47.8193 40.5 49.834 38.4853 49.834 36C49.834 33.5147 47.8193 31.5 45.334 31.5C42.8487 31.5 40.834 33.5147 40.834 36C40.834 38.4853 42.8487 40.5 45.334 40.5Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M20.5839 22.5C22.0613 22.5 23.5242 22.791 24.8891 23.3564C26.254 23.9217 27.4942 24.7504 28.5389 25.795C29.5835 26.8397 30.4122 28.0799 30.9776 29.4448C31.5429 30.8097 31.8339 32.2726 31.8339 33.75V41.625C31.8333 43.507 31.1587 45.3266 29.9323 46.7542C28.7058 48.1818 27.0087 49.1229 25.1482 49.4071C23.2878 49.6914 21.3871 49.2999 19.7903 48.3036C18.1936 47.3074 17.0064 45.7723 16.4439 43.9763C15.4839 40.8788 13.4589 38.85 10.3689 37.89C8.57382 37.3278 7.03928 36.1415 6.04297 34.546C5.04666 32.9504 4.65439 31.0509 4.93715 29.1912C5.21992 27.3315 6.15903 25.6345 7.58455 24.4071C9.01007 23.1798 10.8278 22.5033 12.7089 22.5H20.5839Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
+    spList: 'VETpranesimai',
     authType: SurveyAuthType.OPTIONAL,
     description:
       'Pranešimai apie gyvūnų gerovės pažeidimus, veterinarijos paslaugų teikėjų pažeidimus teisės aktų reikalavimams ar pranešimai apie nelegaliai vykdomą veterinarinę veiklą.',
@@ -925,6 +970,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
         ...pages.tema(),
         questions: [
           q.select(5, undefined, 'Pasirinkite dėl ko pranešate', {
+            spField: 'PranesimoTema',
             riskEvaluation: false,
             options: [
               os('Dėl gyvūnų gerovės', '4.6'), // 0
@@ -949,12 +995,21 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         ...pages.detales(),
         questions: [
-          q.date('4.6', 6, 'Nurodykite pranešamo įvykio datą'),
-          q.date('4.10', 10, 'Nurodykite pranešamo įvykio datą'),
-          q.date('4.11', 11, 'Nurodykite pranešamo įvykio datą'),
-          q.date('4.13', 13, 'Nurodykite pranešamo įvykio datą'),
+          q.date('4.6', 6, 'Nurodykite pranešamo įvykio datą', {
+            spField: 'IvykioData',
+          }),
+          q.date('4.10', 10, 'Nurodykite pranešamo įvykio datą', {
+            spField: 'IvykioData',
+          }),
+          q.date('4.11', 11, 'Nurodykite pranešamo įvykio datą', {
+            spField: 'IvykioData',
+          }),
+          q.date('4.13', 13, 'Nurodykite pranešamo įvykio datą', {
+            spField: 'IvykioData',
+          }),
 
           q.multiselect(6, undefined, 'Pasirinkite gyvūno tipą', {
+            spField: 'GyvunoTipas',
             riskEvaluation: false,
             options: [
               os('Ūkiniai gyvūnai', 8),
@@ -964,6 +1019,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           }),
 
           q.multiselect(7, undefined, 'Pasirinkite gyvūno augintinio rūšį', {
+            spField: 'Augintinis',
             riskEvaluation: false,
             options: [
               os('Šunys', 12),
@@ -980,6 +1036,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.input('7.1', 12, 'Įveskite gyvūno augintinio rūšį', {
             riskEvaluation: false,
             condition: c(7),
+            spField: 'AugintinisKita',
           }),
 
           q.multiselect(8, undefined, 'Pasirinkite ūkinio gyvūno rūšį', {
@@ -995,19 +1052,23 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               os('Bitės', 12),
               os('Kita', '8.1'),
             ],
+            spField: 'Ukinis',
           }),
 
           q.input('8.1', 12, 'Įveskite ūkinio gyvūno rūšį', {
             riskEvaluation: false,
             condition: c(8),
+            spField: 'UkinisKita',
           }),
 
           q.input(9, 12, 'Nurodykite laukinio gyvūno rūšį', {
             riskEvaluation: false,
             condition: c(6),
+            spField: 'Laukinis',
           }),
 
           q.multiselect(10, undefined, 'Pasirinkite gyvūno augintinio rūšį', {
+            spField: 'Augintinis',
             riskEvaluation: false,
             options: [
               os('Šunys', 13),
@@ -1021,12 +1082,14 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           }),
 
           q.input('10.1', 13, 'Įveskite gyvūno augintinio rūšį', {
+            spField: 'AugintinisKita',
             riskEvaluation: false,
             condition: c(10),
           }),
 
           q.multiselect(11, undefined, 'Pasirinkite ūkinio gyvūno rūšį', {
             riskEvaluation: false,
+            spField: 'Ukinis',
             options: [
               os('Galvijai', 13),
               os('Arkliai', 13),
@@ -1040,6 +1103,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           }),
 
           q.input('11.1', 13, 'Įveskite ūkinio gyvūno rūšį', {
+            spField: 'UkinisKita',
             riskEvaluation: false,
             condition: c(11),
           }),
@@ -1054,6 +1118,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               'Šėrimo/girdymo pažeidimai',
               'Kiti pažeidima',
             ]),
+            spField: 'PazTipas5',
           }),
 
           q.multiselect(13, '13.1', 'Pasirinkite apie kokius veiklos pažeidimus pranešate', {
@@ -1076,6 +1141,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               'Šėrimo/girdymo pažeidimai', // 15
               'Ženklinimo/registravimo pažeidimai', // 16
             ]),
+            spField: 'PazTipas5',
             dynamicFields: [
               ...dm(5, [1], {
                 options: [16, 12, 7, 1, 9, 4, 15, 14, 11, 5, 3, 0, 2],
@@ -1113,6 +1179,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
                 condition: false,
               }),
             ],
+            spField: 'VeikTipas',
           }),
         ],
       },
@@ -1122,11 +1189,13 @@ const SURVEYS_SEED: SurveyTemplate[] = [
         questions: [
           q.location(14, 15, 'Žemėlapyje nurodykite gyvūno(-ų) laikymo vietą', {
             riskEvaluation: false,
+            spField: 'Koordinates',
           }),
 
           q.text(15, 19, 'Nurodykite gyvūno(-ų) laikytojus/globėjus', {
             required: false,
             riskEvaluation: false,
+            spField: 'Laikytojai',
           }),
         ],
       },
@@ -1148,6 +1217,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
                 condition: false,
               }),
             ],
+            spField: 'PapInfo',
           }),
           ...helperVeiklos('16.1', 16, {
             dynamicFields: [
@@ -1158,6 +1228,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ],
           }),
           q.location(16, 17, 'Žemėlapyje nurodykite veiklos vykdymo vietą', {
+            spField: 'Koordinates',
             riskEvaluation: false,
             dynamicFields: [
               ...dm(5, [3, 2], {
@@ -1166,6 +1237,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ],
           }),
           q.input(17, 18, 'Nurodykite veiklos pavadinimą', {
+            spField: 'VeiklosPavadinimas',
             riskEvaluation: false,
             required: true,
             dynamicFields: [
@@ -1180,6 +1252,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.text(18, 19, 'Nurodykite veiklą vykdančius fizinius ar juridinius asmenis', {
             riskEvaluation: false,
             required: true,
+            spField: 'VeikVykdAsmenys',
             dynamicFields: [
               ...dm(5, [5], {
                 title: 'Nurodykite pažeidimus vykdančius fizinius asmenis',
@@ -1219,6 +1292,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M29.917 27L38.917 18" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M25.1921 16.3125C23.958 14.9969 22.3561 14.0836 20.5953 13.6916C18.8345 13.2996 16.9965 13.4471 15.3208 14.115C13.645 14.7828 12.2094 15.94 11.2009 17.4357C10.1925 18.9314 9.65797 20.6962 9.66711 22.5C9.66711 24.1425 10.1171 25.6725 10.8821 27" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
+    spList: 'PRTpranešimai',
     authType: SurveyAuthType.OPTIONAL,
     description:
       'Pranešimai apie ligų protrūkius, kurie įtariama, kad sukelti vartojant tam tikrus maisto produktus, taip pat kitus su maisto produktų vartojimu susijusius sveikatos pažeidimus.',
@@ -1230,17 +1304,21 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         ...pages.detales(),
         questions: [
-          q.date(4, 5, 'Nurodykite produktų ar patiekalų įsigijimo/gavimo datą'),
+          q.date(4, 5, 'Nurodykite produktų ar patiekalų įsigijimo/gavimo datą', {
+            spField: 'IvykioData',
+          }),
           q.datetime(
             5,
             '5.1',
             'Nurodykite produkto sukėlusio sveikatos sutrikimus vartojimo datą ir laiką',
             {
               riskEvaluation: false,
+              spField: 'VartojimoData',
             },
           ),
           q.select('5.1', 6, 'Nurodykite vartotų produktų patiekalų rūšį', {
             required: true,
+            spField: 'ProdTipas',
             options: o([
               'Gyvūninės kilmės produktai/patiekalai',
               'Negyvūninės kilmės produktai patiekalai',
@@ -1250,14 +1328,20 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               'Specialiosios paskirties maisto produktai',
             ]),
           }),
-          q.datetime(6, 7, 'Nurodykite pirmųjų simptomų pasireiškimo datą ir laiką'),
-          q.text(7, 8, 'Nurodykite pasireiškusius simptomus'),
+          q.datetime(6, 7, 'Nurodykite pirmųjų simptomų pasireiškimo datą ir laiką', {
+            spField: 'SimptData',
+          }),
+          q.text(7, 8, 'Nurodykite pasireiškusius simptomus', {
+            spField: 'Simptomai',
+          }),
           q.radio(8, 9, 'Ar maistas buvo vartojamas organizuotame renginyje?', {
             options: o(['Taip', 'Ne']),
+            spField: 'OrgReng',
           }),
-          q.radio(9, 10, 'Ar kiti jums žinomi asmenys vartojo tą patį maistą?', {
+          q.radio(9, undefined, 'Ar kiti jums žinomi asmenys vartojo tą patį maistą?', {
             riskEvaluation: false,
-            options: o(['Taip', 'Ne', 'Nežinau']),
+            options: [os('Taip', 10), os('Ne', 11), os('Nežinau', 11)],
+            spField: 'PapAsm',
           }),
           q.radio(
             10,
@@ -1266,17 +1350,21 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             {
               riskEvaluation: false,
               options: o(['Taip', 'Ne', 'Nežinau']),
+              spField: 'SusirgeAsm',
             },
           ),
           q.text(11, 12, 'Nurodykite vartoto maisto pavadinimą', {
             riskEvaluation: false,
+            spField: 'Pavadinimas',
           }),
           q.text(12, 13, 'Nurodykite maisto gamintoją', {
             riskEvaluation: false,
+            spField: 'Gamintojas',
           }),
           q.date(13, 14, 'Nurodykite produkto tinkamumo vartoti terminą', {
             required: false,
             riskEvaluation: false,
+            spField: 'TinkTerm',
           }),
         ],
       },
@@ -1287,10 +1375,12 @@ const SURVEYS_SEED: SurveyTemplate[] = [
         questions: [
           q.location(14, 15, 'Žemėlapyje nurodykite produktų įsigijimo/tiekimo vietą', {
             riskEvaluation: false,
+            spField: 'Koordinates',
           }),
           q.input(15, 16, 'Nurodykite vietos pavadinimą', {
             riskEvaluation: false,
             required: false,
+            spField: 'VeiklosPavadinimas',
           }),
           q.text(
             16,
@@ -1299,6 +1389,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             {
               required: false,
               riskEvaluation: false,
+              spField: 'VeikVykdAsmenys',
             },
           ),
         ],
@@ -1318,11 +1409,13 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             {
               riskEvaluation: false,
               options: [os('Taip', 19), os('Ne', 20)],
+              spField: 'KreipGyd',
             },
           ),
           q.input(19, 20, 'Nurodykite sveikatos priežiūros įstaigos į kurią kreipėtės pavadinimą', {
             riskEvaluation: false,
             condition: c(18),
+            spField: 'Aplinkybes',
           }),
         ],
       ),
@@ -1346,6 +1439,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M34.2 49.5H19.8C18.6841 49.5062 17.6056 49.0975 16.7741 48.3532C15.9425 47.609 15.4172 46.5823 15.3 45.4725L11.25 6.75H42.75L38.6775 45.4725C38.5607 46.5784 38.0386 47.6019 37.2118 48.3457C36.385 49.0894 35.3121 49.5006 34.2 49.5Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M13.5 27C15.4473 25.5395 17.8158 24.75 20.25 24.75C22.6842 24.75 25.0527 25.5395 27 27C28.9473 28.4605 31.3158 29.25 33.75 29.25C36.1842 29.25 38.5527 28.4605 40.5 27" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
+    spList: 'VTVpranesimai',
     authType: SurveyAuthType.REQUIRED,
     description:
       'Pranešimai apie viešai tiekiamo geriamojo vandens neatitikimus kokybės ar saugos normoms.',
@@ -1355,6 +1449,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
         q.input(3, 4, 'Prašome nurodyti savo kontaktinį telefono numerį', {
           riskEvaluation: false,
           authRelation: AuthRelation.PHONE,
+          spField: 'PranTelefonas',
         }),
       ]),
 
@@ -1364,8 +1459,12 @@ const SURVEYS_SEED: SurveyTemplate[] = [
         questions: [
           q.date(4, 5, 'Nurodykite pranešamo įvykio datą', {
             riskEvaluation: false,
+            spField: 'IvykioData',
           }),
-          q.location(5, 6, 'Nurodykite vandens tiekimo vietos adresą', { riskEvaluation: false }),
+          q.location(5, 6, 'Nurodykite vandens tiekimo vietos adresą', {
+            riskEvaluation: false,
+            spField: 'Koordinates',
+          }),
         ],
       },
 
@@ -1403,6 +1502,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M34.9161 21.4873L33.7236 24.2098" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M39.9561 9.78744L41.1486 7.06494" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
+    spList: 'GLPranesimai',
     authType: SurveyAuthType.NONE,
     description:
       'Pranešimai apie pastebėtas laukinių gyvūnų gaišenas, galimai susijusias su plintančiomis gyvūnų ligomis, pranešimai apie pastebėtas ūkinių gyvūnų gaišenas.',
@@ -1420,6 +1520,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.input(2, '2.0', 'Prašome nurodyti savo kontaktinį telefono numerį', {
             required: true,
             riskEvaluation: false,
+            spField: 'PranTelefonas',
           }),
         ],
       ),
@@ -1428,10 +1529,13 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         ...pages.detales(),
         questions: [
-          q.date('2.0', '3.1', 'Nurodykite pranešamo įvykio datą'),
+          q.date('2.0', '3.1', 'Nurodykite pranešamo įvykio datą', {
+            spField: 'IvykioData',
+          }),
 
           q.multiselect('3.1', undefined, 'Pasirinkite gyvūno tipą', {
             riskEvaluation: false,
+            spField: 'GyvunoTipas',
             options: [
               os('Ūkiniai gyvūnai', '3.1.8'),
               os('Gyvūnai augintiniai', '3.1.7'),
@@ -1451,11 +1555,13 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               os('Kita', '3.1.7.1'),
             ],
             condition: c('3.1'),
+            spField: 'Augintinis',
           }),
 
           q.input('3.1.7.1', '3.2', 'Įveskite gyvūno augintinio rūšį', {
             riskEvaluation: false,
             condition: c('3.1.7'),
+            spField: 'AugintinisKita',
           }),
 
           q.multiselect('3.1.8', undefined, 'Pasirinkite ūkinio gyvūno rūšį', {
@@ -1471,11 +1577,13 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               os('Bitės', '3.2'),
               os('Kita', '3.1.8.1'),
             ],
+            spField: 'Ukinis',
           }),
 
           q.input('3.1.8.1', '3.2', 'Įveskite ūkinio gyvūno rūšį', {
             riskEvaluation: false,
             condition: c('3.1.8'),
+            spField: 'UkinisKita',
           }),
 
           q.multiselect('3.1.9', undefined, 'Pasirinkite laukinio gyvūno rūšį', {
@@ -1488,20 +1596,24 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               os('Usūrinis šuo', '3.2'),
               os('Kita', '3.1.9.1'),
             ],
+            spField: 'Laukinis',
           }),
 
           q.input('3.1.9.1', '3.2', 'Įveskite laukinio gyvūno rūšį', {
             riskEvaluation: false,
             condition: c('3.1.9'),
+            spField: 'LaukinisKita',
           }),
 
           q.radio('3.2', undefined, 'Pasirinkite apie ką pranešate', {
             riskEvaluation: false,
             options: [os('Gyvūnų gaišenos', 4), os('Gyvūnų ligos', '3.3')],
+            spField: 'PranesimoTema',
           }),
 
           q.text('3.3', '3.4', 'Aprašykite gyvūno(-ų) simptomatiką', {
             condition: c('3.2'),
+            spField: 'Simptomai',
           }),
 
           q.location('3.4', 5, 'Nurodykite gyvūno(-ų) laikymo vietą', {
@@ -1510,11 +1622,13 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               valueIndex: 1,
             },
             riskEvaluation: false,
+            spField: 'Koordinates',
           }),
 
           q.location(4, 5, 'Nurodykite gaišenos radimo vietą', {
             condition: c('3.2'),
             riskEvaluation: false,
+            spField: 'Koordinates',
           }),
         ],
       },
@@ -1525,6 +1639,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
         questions: [
           q.text(5, 6, 'Pateikite papildomą informaciją', {
             riskEvaluation: false,
+            spField: 'Aplinkybes',
           }),
         ],
       },
@@ -1536,6 +1651,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.files(6, undefined, 'Pridėkite vaizdinę ar kitą medžiagą', {
             required: false,
             riskEvaluation: false,
+            spField: 'Attachments',
           }),
         ],
       },
