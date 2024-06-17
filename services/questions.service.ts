@@ -159,7 +159,6 @@ export type Question<
 
       spField: {
         type: 'string',
-        readonly: true,
       },
 
       ...DYNAMIC_FIELDS,

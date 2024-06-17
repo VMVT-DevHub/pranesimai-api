@@ -16,21 +16,22 @@ import {
 import { Question, QuestionType } from './questions.service';
 import { Session } from './sessions.service';
 import { Response } from './responses.service';
-import { Survey } from './surveys.service';
+import { Survey, SurveyAuthType } from './surveys.service';
 
 interface Fields extends CommonFields {
   session: Session['id'];
   survey: Survey['id'];
+  spList: Survey['spList'];
   startedAt: Date;
   finishedAt: Date;
   auth: boolean;
   email: string;
   phone: string;
   answers: Array<{
-    questionId: Question['id'];
+    questionId?: Question['id'];
     title: Question['title'];
     answer: any;
-    type: QuestionType;
+    type?: QuestionType;
     required: Question['required'];
     riskEvaluation: Question['riskEvaluation'];
     spField: Question['spField'];
@@ -83,6 +84,7 @@ export type Report<
         },
       },
 
+      spList: 'string',
       startedAt: 'date',
       finishedAt: 'date',
       auth: 'boolean',
@@ -119,7 +121,18 @@ export default class ReportsService extends moleculer.Service {
     }
     responses.reverse();
 
+    const survey: Survey = await ctx.call('surveys.resolve', { id: session.survey });
+
     const answers: Report['answers'] = [];
+    if (survey.authType === SurveyAuthType.OPTIONAL) {
+      answers.push({
+        title: 'Ar anonimas?',
+        answer: session.auth ? 'Ne' : 'Taip',
+        required: true,
+        riskEvaluation: false,
+        spField: 'Anonimas',
+      });
+    }
 
     for (const response of responses) {
       for (const question of response.questions) {
@@ -185,8 +198,6 @@ export default class ReportsService extends moleculer.Service {
       }
     }
 
-    const survey: Survey = await ctx.call('surveys.resolve', { id: session.survey });
-
     const csv = stringify([
       ['Sesijos ID', session.id],
       ['Apklausos ID', survey.id],
@@ -204,6 +215,7 @@ export default class ReportsService extends moleculer.Service {
     await this.createEntity(ctx, <Partial<Report>>{
       session: session.id,
       survey: session.survey,
+      spList: survey.spList,
       startedAt: session.createdAt,
       finishedAt: session.finishedAt,
       auth: session.auth,
