@@ -290,7 +290,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               os('Dėl suteiktų viešojo maitinimo paslaugų', 8), // 3
               os('Dėl vykdomos maisto tvarkymo veiklos pažeidimų', 9), // 4
             ],
-            spField: 'Pranešimo tema',
+            spField: 'PranesimoTema',
           }),
         ],
       },
@@ -1292,7 +1292,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M29.917 27L38.917 18" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M25.1921 16.3125C23.958 14.9969 22.3561 14.0836 20.5953 13.6916C18.8345 13.2996 16.9965 13.4471 15.3208 14.115C13.645 14.7828 12.2094 15.94 11.2009 17.4357C10.1925 18.9314 9.65797 20.6962 9.66711 22.5C9.66711 24.1425 10.1171 25.6725 10.8821 27" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
-    spList: 'PRTpranešimai',
+    spList: 'PRTpranesimai',
     authType: SurveyAuthType.OPTIONAL,
     description:
       'Pranešimai apie ligų protrūkius, kurie įtariama, kad sukelti vartojant tam tikrus maisto produktus, taip pat kitus su maisto produktų vartojimu susijusius sveikatos pažeidimus.',
