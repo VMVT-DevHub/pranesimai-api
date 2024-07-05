@@ -139,12 +139,19 @@ export default class ReportsService extends moleculer.Service {
         const value = response.values[question.id];
         let answer = value;
 
-        if (
-          question.condition &&
-          (response.values[question.condition.question] !== question.condition.value ||
-            !response.values[question.condition.question]?.includes?.(question.condition.value))
-        ) {
-          continue;
+        if (question.condition) {
+          const { question: conditionQuestion, value: conditionValue } = question.condition;
+          const responseValue = response.values[conditionQuestion];
+
+          if (Array.isArray(responseValue)) {
+            if (!responseValue.includes(conditionValue)) {
+              continue;
+            }
+          } else {
+            if (responseValue !== conditionValue) {
+              continue;
+            }
+          }
         }
 
         if (value) {
