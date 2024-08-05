@@ -160,7 +160,8 @@ export type Response<
 
                   return question;
                 })
-                .filter((question) => (question.condition as any) !== false);
+                .filter((question) => (question.condition as any) !== false)
+                .sort((a, b) => b.priority - a.priority);
             }),
           );
         },
