@@ -28,6 +28,7 @@ WORKDIR /app
 
 # Install only production dependencies
 COPY package.json yarn.lock ./
+COPY dependencies/moleculer-minio ./dependencies/moleculer-minio
 RUN yarn install --immutable --immutable-cache --inline-builds --production \
     && yarn cache clean
 
