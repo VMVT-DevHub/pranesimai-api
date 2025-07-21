@@ -59,7 +59,7 @@
     "moleculer-decorators": "^1.3.0",
     "moleculer-http-client": "^0.4.2",
     "moleculer-knex-filters": "github:DadPatch/moleculer-knex-filters",
-    "moleculer-minio": "github:zeckon/moleculer-minio",
+    "moleculer-minio": "git+https://github.com/VMVT-DevHub/moleculer-minio.git",
     "moleculer-repl": "^0.7.4",
     "moleculer-sentry": "^2.0.0",
     "moleculer-web": "^0.10.4",
