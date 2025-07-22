@@ -1,10 +1,8 @@
-import { Knex } from 'knex';
-
-// NOTE: Some changes were applied directly to the database without using knex,
-// this migration is to synchronize those changes.
-// After comparing the SQL dump files, the differences found were a few views and indices.
-
-export async function up(knex: Knex): Promise<void> {
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+exports.up = async function (knex) {
   const existsQuestionsTable = await knex.schema.hasTable('questions');
   if (existsQuestionsTable) {
     await knex.raw(`
@@ -33,9 +31,13 @@ export async function up(knex: Knex): Promise<void> {
     LEFT JOIN pranesimai.questions q ON s.id = q.survey_id
     WHERE q.sp_field IS NOT NULL;
   `);
-}
+};
 
-export async function down(knex: Knex): Promise<void> {
+/**
+ * @param { import("knex").Knex } knex
+ * @returns { Promise<void> }
+ */
+exports.down = async function (knex) {
   await knex.raw(`
     DROP INDEX IF EXISTS pranesimai.idx_questions_survey;
   `);
@@ -51,4 +53,4 @@ export async function down(knex: Knex): Promise<void> {
   await knex.raw(`
     DROP VIEW IF EXISTS pranesimai.sp_surveys;
   `);
-}
+};
