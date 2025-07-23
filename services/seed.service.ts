@@ -1,11 +1,16 @@
 'use strict';
 
 import moleculer from 'moleculer';
+import crypto from 'crypto';
 import { Action, Method, Service } from 'moleculer-decorators';
 import { Survey, SurveyAuthType } from './surveys.service';
 import { Page } from './pages.service';
 import { AuthRelation, Question, QuestionType } from './questions.service';
 import { QuestionOption } from './questionOptions.service';
+import DbConnection from '../mixins/database.mixin';
+
+const IS_SEED_REFRESH_ENABLED = process.env.IS_SEED_REFRESH_ENABLED ?? false;
+const TEMPLATE_VERSION = 'v1';
 
 type SurveyTemplate = {
   title: Survey['title'];
@@ -1661,6 +1666,33 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 
 @Service({
   name: 'seed',
+  mixins: [DbConnection({ collection: 'seed_metadata', rest: false })],
+  settings: {
+    fields: {
+      id: {
+        type: 'number',
+        columnType: 'integer',
+        primaryKey: true,
+      },
+      key: {
+        type: 'string',
+        required: true,
+      },
+      hash: {
+        type: 'string',
+        required: true,
+      },
+      version: {
+        type: 'string',
+      },
+      created_at: {
+        type: 'date',
+      },
+      updated_at: {
+        type: 'date',
+      },
+    },
+  },
 })
 export default class SeedService extends moleculer.Service {
   @Method
@@ -1797,13 +1829,105 @@ export default class SeedService extends moleculer.Service {
     }
   }
 
-  @Action()
+  @Method
+  async shouldRecreateSeedData(currentHash: string): Promise<boolean> {
+    if (['production', 'test'].includes(process.env.NODE_ENV)) return false; // TODO: remove when templates are synced
+    return await this.haveSeedTemplatesChanged(currentHash);
+  }
+
+  @Method
+  async haveSeedTemplatesChanged(currentHash: string): Promise<boolean> {
+    const storedHash = await this.getStoredSeedHash();
+
+    if (currentHash != storedHash) {
+      return true;
+    }
+
+    return false;
+  }
+
+  @Method
+  generateSeedHash(surveys: SurveyTemplate[]): string {
+    const seedString = JSON.stringify(surveys, null, 0);
+    return crypto.createHash('md5').update(seedString).digest('hex');
+  }
+
+  @Method
+  async getStoredSeedHash(): Promise<string | null> {
+    try {
+      const metadataRecord = (await this.broker.call('seed.findOne', {
+        query: { key: 'surveys.seedHash' },
+      })) as any;
+
+      return metadataRecord?.hash || null;
+    } catch (error) {
+      console.warn('Could not retrieve seed hash from database:', error);
+      return null;
+    }
+  }
+
+  @Method
+  async storeSeedHash(hash: string): Promise<void> {
+    try {
+      const existing = (await this.broker.call('seed.findOne', {
+        query: { key: 'surveys.seedHash' },
+      })) as any;
+
+      if (existing) {
+        await this.broker.call('seed.update', {
+          id: existing.id,
+          hash,
+          version: TEMPLATE_VERSION,
+          updated_at: new Date(),
+        });
+      } else {
+        await this.broker.call('seed.create', {
+          key: 'surveys.seedHash',
+          hash,
+          version: TEMPLATE_VERSION,
+        });
+      }
+    } catch (error) {
+      console.warn('Could not store seed hash in seed_metadata table:', error);
+    }
+  }
+
+  @Method
+  async recreateSeedData(surveys: SurveyTemplate[]) {
+    await this.clearAllSeedData();
+    await this.seedSurveys(surveys);
+  }
+
+  @Method
+  async clearAllSeedData() {
+    // Cleared in reverese dependency order
+    await this.broker.call('questionOptions.removeAllEntities');
+    await this.broker.call('questions.removeAllEntities');
+    await this.broker.call('pages.removeAllEntities');
+    await this.broker.call('surveys.removeAllEntities');
+  }
+
+  @Action({ timeout: 180000 })
   async run() {
     await this.broker.waitForServices(['surveys', 'pages', 'questions', 'questionOptions']);
-    const count: number = await this.broker.call('surveys.count');
 
-    if (!count) {
-      await this.seedSurveys(SURVEYS_SEED);
+    if (IS_SEED_REFRESH_ENABLED) {
+      const currentHash = this.generateSeedHash(SURVEYS_SEED);
+      const shouldRecreate = await this.shouldRecreateSeedData(currentHash);
+
+      if (shouldRecreate) {
+        await this.recreateSeedData(SURVEYS_SEED);
+        await this.storeSeedHash(currentHash);
+        console.log('Seed data recreation is completed');
+      } else {
+        console.log('Seed template is unchanged, no reseeding required');
+      }
+    } else {
+      const count: number = await this.broker.call('surveys.count');
+
+      if (!count) {
+        await this.seedSurveys(SURVEYS_SEED);
+      }
     }
   }
 }

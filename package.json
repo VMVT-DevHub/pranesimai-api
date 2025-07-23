@@ -75,7 +75,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
       "prettier --write",
-      "eslint"
+      "eslint --ignore-pattern dependencies/moleculer-minio/"
     ],
     "*.{md,html,css}": "prettier --write"
   },
