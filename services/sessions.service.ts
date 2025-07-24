@@ -130,7 +130,7 @@ export default class SessionsService extends moleculer.Service {
         host: string;
         url: string;
       } = await ctx.call('http.post', {
-        url: `${process.env.VIISP_HOST}/auth/sign`,
+        url: `${process.env.VIISP_HOST}/sign`,
         opt: {
           responseType: 'json',
           json: {
@@ -164,7 +164,7 @@ export default class SessionsService extends moleculer.Service {
       email: string;
       phoneNumber: string;
     } = await ctx.call('http.get', {
-      url: `${process.env.VIISP_HOST}/auth/data?ticket=${ticket}`,
+      url: `${process.env.VIISP_HOST}/data?ticket=${ticket}`,
       opt: {
         responseType: 'json',
       },
@@ -249,7 +249,7 @@ export default class SessionsService extends moleculer.Service {
     });
 
     ctx.meta.$statusCode = 302;
-    ctx.meta.$location = '/';
+    ctx.meta.$location = process.env.FRONTEND_URL;
   }
 
   @Action({
