@@ -6,6 +6,7 @@ import Moleculer, { Context, RestSchema } from 'moleculer';
 import { Action, Method, Service } from 'moleculer-decorators';
 import moleculer from 'moleculer';
 import mime from 'mime-types';
+import { v4 as uuidv4 } from 'uuid';
 import { MultipartMeta, throwNotFoundError } from '../types';
 import { RestrictionType } from './api.service';
 
@@ -132,17 +133,25 @@ export default class FilesService extends Moleculer.Service {
       bucketName,
     });
 
-    const url = await ctx.call('files.getUrl', {
-      objectName: objectFileName,
-      bucketName,
-    });
+    const fileId = uuidv4();
+
+    await this.broker.cacher.set(
+      `uploaded-file:${fileId}`,
+      {
+        bucketName,
+        objectName: objectFileName,
+        filename,
+        size,
+        uploadedAt: Date.now(),
+      },
+      60 * 60 * 24 * 365,
+    );
 
     const response: any = {
       success: true,
-      url,
+      id: fileId,
       size,
       filename,
-      path: `${bucketName}/${objectFileName}`,
     };
 
     return response;

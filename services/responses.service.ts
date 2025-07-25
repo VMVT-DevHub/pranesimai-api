@@ -408,11 +408,31 @@ export default class ResponsesService extends moleculer.Service {
           if (!Array.isArray(value)) {
             errors[question.id] = 'FILES must be array';
           } else {
+            const resolvedFiles = [];
+
             for (const item of value) {
-              if (!item.url) {
-                errors[question.id] = 'FILES item must have url property';
+              const fileMeta = await this.broker.cacher.get(`uploaded-file:${item.id}`);
+
+              if (!fileMeta) {
+                errors[question.id] = 'Invalid or expired file ID';
+                continue;
               }
+
+              const url = await ctx.call('files.getUrl', {
+                objectName: fileMeta.objectName,
+                bucketName: fileMeta.bucketName,
+              });
+
+              resolvedFiles.push({
+                url,
+                name: fileMeta.filename,
+                size: fileMeta.size,
+              });
+
+              await this.broker.cacher.del(`uploaded-file:${item.id}`);
             }
+
+            values[question.id] = resolvedFiles;
           }
 
           break;

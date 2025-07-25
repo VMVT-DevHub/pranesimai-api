@@ -67,7 +67,8 @@
     "objection": "^3.0.1",
     "pg": "^8.7.3",
     "pg-hstore": "^2.3.4",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "uuid": "^11.1.0"
   },
   "engines": {
     "node": ">=20.0.0 <21.0.0"
