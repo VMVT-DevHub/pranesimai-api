@@ -599,7 +599,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
                 title: 'Nurodykite paslaugų suteikimo vietos pavadinimą',
               }),
             ],
-            spField: 'veik_pav ',
+            spField: 'veik_pav',
           }),
           q.text(
             23,
@@ -946,7 +946,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           }),
           q.input(13, 14, 'Nurodykite veiklos pavadinimą', {
             riskEvaluation: false,
-            spField: 'veik_pav ',
+            spField: 'veik_pav',
             dynamicFields: [
               ...dm(4, [0, 1, 2, 3], {
                 title: 'Nurodykite prekybos vietos pavadinimą',
@@ -1322,7 +1322,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ],
           }),
           q.input(17, 18, 'Nurodykite veiklos pavadinimą', {
-            spField: 'veik_pav ',
+            spField: 'veik_pav',
             riskEvaluation: false,
             required: true,
             dynamicFields: [
@@ -1465,7 +1465,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.input(15, 16, 'Nurodykite vietos pavadinimą', {
             riskEvaluation: false,
             required: false,
-            spField: 'veik_pav ',
+            spField: 'veik_pav',
           }),
           q.text(
             16,
