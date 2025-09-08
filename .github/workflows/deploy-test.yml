@@ -31,4 +31,4 @@ jobs:
           application-private-key: ${{ secrets.A1CS_TRIGGER_DEPLOY_APPLICATION_PRIVATE_KEY }}
           repository: ${{ secrets.A1CS_TRIGGER_DEPLOY_REPOSITORY }}
           workflow-file-name: ${{ secrets.A1CS_TRIGGER_DEPLOY_WORKFLOW_FILE_NAME }}
-          workflow-payload: '{"environment": "test", "VITE_SP_LIST": "${{ secrets.VITE_SP_LIST_TEST }}"}'
+          workflow-payload: '{"environment": "test"}'
