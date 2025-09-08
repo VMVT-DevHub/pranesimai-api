@@ -289,7 +289,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M33.2923 30.375L38.4448 32.625C40.0873 33.3 41.1673 34.2 41.1673 36V43.875C41.1673 47.7225 40.0423 49.5 35.5423 49.5C31.5063 49.3113 27.6627 47.7198 24.6748 45" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M41.167 36.0002C44.6545 36.0002 50.167 35.4602 50.167 40.5002C50.167 45.0002 45.2845 46.1252 41.167 46.1252" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
-    spList: process.env.VITE_SP_LIST,
+    spList: process.env.SP_LIST,
     description:
       'Pranešimai apie neatitikimus maisto produktų kokybei, saugai, įskaitant maisto produktų, jų tiekėjų ar viešojo maitinimo įstaigų veiklą. Taip pat pranešimai apie nelegalią veiklą, susijusią su maisto produktų gamyba, platinimu ar pardavimu.',
     authType: SurveyAuthType.OPTIONAL,
@@ -642,7 +642,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M19.125 19.125L34.875 34.875" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
     `,
-    spList: process.env.VITE_SP_LIST,
+    spList: process.env.SP_LIST,
     authType: SurveyAuthType.OPTIONAL,
     description:
       'Pranešimai apie pašarus ir veterinarinius vaistus, jų kokybės, saugos, ženklinimo ir kitus pažeidimus, nelegalią šių produktų gamybą, tiekimą. Pranešimai apie pašarų ir veterinarinės farmacijos ūkio subjektų veiklos pažeidimus.',
@@ -985,7 +985,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M45.334 40.5C47.8193 40.5 49.834 38.4853 49.834 36C49.834 33.5147 47.8193 31.5 45.334 31.5C42.8487 31.5 40.834 33.5147 40.834 36C40.834 38.4853 42.8487 40.5 45.334 40.5Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M20.5839 22.5C22.0613 22.5 23.5242 22.791 24.8891 23.3564C26.254 23.9217 27.4942 24.7504 28.5389 25.795C29.5835 26.8397 30.4122 28.0799 30.9776 29.4448C31.5429 30.8097 31.8339 32.2726 31.8339 33.75V41.625C31.8333 43.507 31.1587 45.3266 29.9323 46.7542C28.7058 48.1818 27.0087 49.1229 25.1482 49.4071C23.2878 49.6914 21.3871 49.2999 19.7903 48.3036C18.1936 47.3074 17.0064 45.7723 16.4439 43.9763C15.4839 40.8788 13.4589 38.85 10.3689 37.89C8.57382 37.3278 7.03928 36.1415 6.04297 34.546C5.04666 32.9504 4.65439 31.0509 4.93715 29.1912C5.21992 27.3315 6.15903 25.6345 7.58455 24.4071C9.01007 23.1798 10.8278 22.5033 12.7089 22.5H20.5839Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
-    spList: process.env.VITE_SP_LIST,
+    spList: process.env.SP_LIST,
     authType: SurveyAuthType.OPTIONAL,
     description:
       'Pranešimai apie gyvūnų gerovės pažeidimus, veterinarijos paslaugų teikėjų pažeidimus teisės aktų reikalavimams ar pranešimai apie nelegaliai vykdomą veterinarinę veiklą.',
@@ -1524,7 +1524,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M34.2 49.5H19.8C18.6841 49.5062 17.6056 49.0975 16.7741 48.3532C15.9425 47.609 15.4172 46.5823 15.3 45.4725L11.25 6.75H42.75L38.6775 45.4725C38.5607 46.5784 38.0386 47.6019 37.2118 48.3457C36.385 49.0894 35.3121 49.5006 34.2 49.5Z" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M13.5 27C15.4473 25.5395 17.8158 24.75 20.25 24.75C22.6842 24.75 25.0527 25.5395 27 27C28.9473 28.4605 31.3158 29.25 33.75 29.25C36.1842 29.25 38.5527 28.4605 40.5 27" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
-    spList: process.env.VITE_SP_LIST,
+    spList: process.env.SP_LIST,
     authType: SurveyAuthType.REQUIRED,
     description:
       'Pranešimai apie viešai tiekiamo geriamojo vandens neatitikimus kokybės ar saugos normoms.',
@@ -1587,7 +1587,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M34.9161 21.4873L33.7236 24.2098" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M39.9561 9.78744L41.1486 7.06494" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
-    spList: process.env.VITE_SP_LIST,
+    spList: process.env.SP_LIST,
     authType: SurveyAuthType.NONE,
     description:
       'Pranešimai apie pastebėtas laukinių gyvūnų gaišenas, galimai susijusias su plintančiomis gyvūnų ligomis, pranešimai apie pastebėtas ūkinių gyvūnų gaišenas.',
