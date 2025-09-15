@@ -304,14 +304,14 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.select(4, undefined, 'Pasirinkite dėl ko pranešate', {
             riskEvaluation: false,
             options: [
-              os('Dėl įsigytų maisto produktų ar su maistu besiliečiančių medžiagų', 5), // 0
+              // os('Dėl įsigytų maisto produktų ar su maistu besiliečiančių medžiagų', 5), // 0
               os(
-                'Dėl pastebėtų prekybos vietoje maisto produktų ar su maistu besiliečiančių medžiagų',
+                'Dėl pastebėtų ar įsigytų prekybos vietoje maisto produktų ar su maistu besiliečiančių medžiagų',
                 6,
-              ), // 1
-              os('Dėl įsigytų patiekalų', 7), // 2
-              os('Dėl suteiktų viešojo maitinimo paslaugų', 8), // 3
-              os('Dėl vykdomos maisto tvarkymo veiklos pažeidimų', 9), // 4
+              ), // 1 --> 0
+              os('Dėl įsigytų patiekalų', 7), // 2 --> 1
+              os('Dėl suteiktų viešojo maitinimo paslaugų', 8), // 3 -->  2
+              os('Dėl vykdomos maisto tvarkymo veiklos pažeidimų', 9), // 4 --> 3
             ],
             spField: 'pran_tip',
           }),
@@ -334,7 +334,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           {
             condition: {
               question: 4,
-              valueIndex: 1,
+              valueIndex: 0,
             },
             values: {
               title: 'Informacija apie produktą',
@@ -343,7 +343,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           {
             condition: {
               question: 4,
-              valueIndex: 2,
+              valueIndex: 1,
             },
             values: {
               title: 'Informacija apie patiekalą',
@@ -351,10 +351,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           },
         ],
         questions: [
-          q.date(5, 10, 'Nurodykite produktų įsigijimo datą', {
-            spField: 'ivykio_data',
-          }),
-          q.date(6, 10, 'Nurodykite produktų pastebėjimo prekybos vietoje datą', {
+          q.date(6, 10, 'Nurodykite produktų įsigijimo arba pastebėjimo prekybos vietoje datą', {
             spField: 'ivykio_data',
           }),
           q.date(7, 11, 'Nurodykite patiekalų įsigijimo datą', {
@@ -507,7 +504,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               {
                 condition: {
                   question: 4,
-                  valueIndex: 1,
+                  valueIndex: 0,
                 },
                 values: {
                   title: 'Ar galite nurodyti tiekėją',
@@ -530,7 +527,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               {
                 condition: {
                   question: 4,
-                  valueIndex: 1,
+                  valueIndex: 0,
                 },
                 values: {
                   title: 'Produkto tiekėjas',
@@ -551,7 +548,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.input(20, '21.0', 'Nurodykite patiekalo pavadinimą', {
             riskEvaluation: false,
             dynamicFields: [
-              ...dm(4, [3], {
+              ...dm(4, [2], {
                 required: false,
               }),
             ],
@@ -565,17 +562,17 @@ const SURVEYS_SEED: SurveyTemplate[] = [
         title: 'Veiklos informacija',
         description: 'Pateikite papildomą informaciją',
         dynamicFields: [
-          ...dm(4, [0, 1, 2], {
+          ...dm(4, [0, 1], {
             title: 'Informacija apie prekybos vietą',
           }),
-          ...dm(4, [3], {
+          ...dm(4, [2], {
             title: 'Informacija apie paslaugų tiekimo vietą',
           }),
         ],
         questions: [
           ...AddressHelper('21.0', 21, {
             dynamicFields: [
-              ...dm(4, [3, 4], {
+              ...dm(4, [2, 3], {
                 condition: false,
               }),
             ],
@@ -583,7 +580,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.input(21, 22, 'Nurodykite prekybos vietos adresą (sav., gyv., gatvė, namas, butas)', {
             riskEvaluation: false,
             dynamicFields: [
-              ...dm(4, [0, 1, 2], {
+              ...dm(4, [0, 1], {
                 condition: false,
               }),
             ],
@@ -592,10 +589,10 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           q.input(22, 23, 'Nurodykite veiklos pavadinimą', {
             riskEvaluation: false,
             dynamicFields: [
-              ...dm(4, [0, 1, 2], {
+              ...dm(4, [0, 1], {
                 title: 'Nurodykite prekybos vietos pavadinimą',
               }),
-              ...dm(4, [3], {
+              ...dm(4, [2], {
                 title: 'Nurodykite paslaugų suteikimo vietos pavadinimą',
               }),
             ],
