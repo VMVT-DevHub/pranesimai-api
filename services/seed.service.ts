@@ -306,7 +306,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             options: [
               // os('Dėl įsigytų maisto produktų ar su maistu besiliečiančių medžiagų', 5), // 0
               os(
-                'Dėl pastebėtų ar įsigytų prekybos vietoje maisto produktų ar su maistu besiliečiančių medžiagų',
+                'Dėl įsigytų ar pastebėtų prekybos vietoje maisto produktų ar su maistu besiliečiančių medžiagų',
                 6,
               ), // 1 --> 0
               os('Dėl įsigytų patiekalų', 7), // 2 --> 1
