@@ -1522,7 +1522,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
 <path d="M13.5 27C15.4473 25.5395 17.8158 24.75 20.25 24.75C22.6842 24.75 25.0527 25.5395 27 27C28.9473 28.4605 31.3158 29.25 33.75 29.25C36.1842 29.25 38.5527 28.4605 40.5 27" stroke="#2671D9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`,
     spList: process.env.SP_LIST,
-    authType: SurveyAuthType.REQUIRED,
+    authType: SurveyAuthType.OPTIONAL,
     description:
       'Pranešimai apie viešai tiekiamo geriamojo vandens neatitikimus kokybės ar saugos normoms.',
     pages: [
@@ -1543,23 +1543,36 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             riskEvaluation: false,
             spField: 'ivykio_data',
           }),
-          q.location(5, 6, 'Nurodykite vandens tiekimo vietos adresą', {
+          q.input(5, 6, 'Nurodykite prekybos vietos adresą (sav., gyv., gatvė, namas, butas)', {
             riskEvaluation: false,
-            spField: 'koord',
+            spField: 'adresas',
+          }),
+          q.input(
+            6,
+            7,
+            'Nurodykite kontaktus kuriais galime su jumis susisiekti dėl vandens mėginio paėmimo?',
+            {
+              riskEvaluation: false,
+              spField: 'meg_kontak',
+            },
+          ),
+          q.input(7, 8, 'Nurodykite kokiu laiku galima atvykti paimti mėginio?', {
+            riskEvaluation: false,
+            spField: 'darbo_laik',
           }),
         ],
       },
 
       // =======================================
-      pages.aplinkybes(6, {
+      pages.aplinkybes(8, {
         required: true,
       }),
 
       // =======================================
-      pages.vaizdine(7),
+      pages.vaizdine(9),
 
       // =======================================
-      pages.teises(9),
+      pages.teises(10),
     ],
   },
 
