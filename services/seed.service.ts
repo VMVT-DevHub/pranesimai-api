@@ -1572,7 +1572,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       pages.vaizdine(9),
 
       // =======================================
-      pages.teises(10),
+      pages.teises(11),
     ],
   },
 
