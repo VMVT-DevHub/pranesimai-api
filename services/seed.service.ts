@@ -1725,6 +1725,11 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             riskEvaluation: false,
             spField: 'koord',
           }),
+          q.input(5, 6, 'Nurodykite papildomą informaciją apie vietos adresą', {
+            riskEvaluation: false,
+            required: false,
+            spField: 'pap_adr_info',
+          }),
         ],
       },
 
@@ -1732,18 +1737,18 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         ...pages.papildoma(),
         questions: [
-          q.text(5, 6, 'Pateikite papildomą informaciją', {
+          q.text(6, 7, 'Pateikite papildomą informaciją', {
             riskEvaluation: false,
-            spField: 'aplink',
+            spField: 'pap_info',
           }),
         ],
       },
 
       // =======================================
       {
-        ...pages.vaizdine(6),
+        ...pages.vaizdine(7),
         questions: [
-          q.files(6, undefined, 'Pridėkite vaizdinę ar kitą medžiagą', {
+          q.files(7, undefined, 'Pridėkite vaizdinę ar kitą medžiagą', {
             required: false,
             riskEvaluation: false,
             spField: 'files',
