@@ -133,9 +133,15 @@ const helperVeiklos = (id: number | string, idOut: number | string, qa: Question
     spField: 'prek_tip',
     ...qa,
   }),
-  q.location(`${id}.1`, idOut, 'Žemėlapyje nurodykite pardavimo vietą', {
+  q.location(`${id}.1`, `${id}.1.5`, 'Žemėlapyje nurodykite pardavimo vietą', {
     condition: c(id),
+    required: false,
     spField: 'koord',
+    ...qa,
+  }),
+  q.input(`${id}.1.5`, idOut, 'Nurodykite vietos adresą', {
+    riskEvaluation: false,
+    spField: 'pap_adr_info',
     ...qa,
   }),
   q.input(`${id}.2`, idOut, 'Pateikite nuoroda į internetinės prekybos puslapį', {

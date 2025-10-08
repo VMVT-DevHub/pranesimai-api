@@ -219,7 +219,7 @@ export default class SessionsService extends moleculer.Service {
       'Set-Cookie': cookie.serialize('vmvt-session-token', session.token, {
         path: '/',
         httpOnly: true,
-        maxAge: 60 * 60 * 24 * 7, // 1 week
+        maxAge: 60 * 30, // 30 mins
       }),
     };
 
