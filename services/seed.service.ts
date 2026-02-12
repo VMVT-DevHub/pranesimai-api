@@ -1533,6 +1533,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
           riskEvaluation: false,
           authRelation: AuthRelation.PHONE,
           spField: 'pran_tel',
+          hint: '+37000000000',
         }),
       ]),
 
@@ -1617,6 +1618,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             required: true,
             riskEvaluation: false,
             spField: 'pran_tel',
+            hint: '+37000000000',
           }),
         ],
       ),
