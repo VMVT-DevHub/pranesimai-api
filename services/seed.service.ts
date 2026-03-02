@@ -1545,20 +1545,20 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             riskEvaluation: false,
             spField: 'ivykio_data',
           }),
-          q.input(5, 6, 'Nurodykite prekybos vietos adresą (sav., gyv., gatvė, namas, butas)', {
+          q.input(5, 6, 'Nurodykite vietos adresą (sav., gyv., gatvė, namas, butas)', {
             riskEvaluation: false,
             spField: 'adresas',
           }),
           q.input(
             6,
             7,
-            'Nurodykite kontaktus kuriais galime su jumis susisiekti dėl vandens mėginio paėmimo?',
+            'Nurodykite kontaktus kuriais galime su jumis susisiekti dėl vandens mėginio paėmimo',
             {
               riskEvaluation: false,
               spField: 'meg_kontak',
             },
           ),
-          q.input(7, 8, 'Nurodykite kokiu laiku galima atvykti paimti mėginio?', {
+          q.input(7, 8, 'Nurodykite kokiu laiku galima atvykti paimti mėginio', {
             riskEvaluation: false,
             spField: 'darbo_laik',
           }),
@@ -1751,13 +1751,15 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         ...pages.vaizdine(7),
         questions: [
-          q.files(7, undefined, 'Pridėkite vaizdinę ar kitą medžiagą', {
+          q.files(7, 9, 'Pridėkite vaizdinę ar kitą medžiagą', {
             required: false,
             riskEvaluation: false,
             spField: 'files',
           }),
         ],
       },
+      //
+      pages.teises(9),
     ],
   },
 ];
