@@ -350,6 +350,7 @@ export default class ResponsesService extends moleculer.Service {
 
     const { values } = ctx.params;
     const errors: Record<string | number, string> = {};
+    const warnings: Record<string | number, string> = {};
 
     for (const question of response.questions) {
       const value = values[question.id];
@@ -411,10 +412,19 @@ export default class ResponsesService extends moleculer.Service {
             const resolvedFiles = [];
 
             for (const item of value) {
+              if (item.url && item.name && item.size) {
+                resolvedFiles.push(item);
+                continue;
+              }
+
+              if (!item.id) {
+                warnings[question.id] = 'Invalid file format';
+                continue;
+              }
               const fileMeta = await this.broker.cacher.get(`uploaded-file:${item.id}`);
 
               if (!fileMeta) {
-                errors[question.id] = 'Invalid or expired file ID';
+                warnings[question.id] = 'Invalid or expired file ID';
                 continue;
               }
 
@@ -429,12 +439,15 @@ export default class ResponsesService extends moleculer.Service {
                 size: fileMeta.size,
               });
 
-              await this.broker.cacher.del(`uploaded-file:${item.id}`);
+              // await this.broker.cacher.del(`uploaded-file:${item.id}`);
             }
 
-            values[question.id] = resolvedFiles;
+            if (question.required && resolvedFiles.length === 0) {
+              warnings[question.id] = 'At least one valid file is required';
+            } else {
+              values[question.id] = resolvedFiles;
+            }
           }
-
           break;
 
         case QuestionType.EMAIL:

@@ -1750,13 +1750,13 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       // =======================================
       {
         ...pages.vaizdine(7),
-        questions: [
-          q.files(7, 9, 'Pridėkite vaizdinę ar kitą medžiagą', {
-            required: false,
-            riskEvaluation: false,
-            spField: 'files',
-          }),
-        ],
+        // questions: [
+        //   q.files(7, 9, 'Pridėkite vaizdinę ar kitą medžiagą', {
+        //     required: false,
+        //     riskEvaluation: false,
+        //     spField: 'files',
+        //   }),
+        // ],
       },
       //
       pages.teises(9),
