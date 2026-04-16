@@ -626,7 +626,12 @@ export default class ResponsesService extends moleculer.Service {
 
         // if question with options, continue nextQuestion by option
         if (
-          [QuestionType.SELECT, QuestionType.MULTISELECT, QuestionType.RADIO].includes(local.type)
+          [
+            QuestionType.SELECT,
+            QuestionType.MULTISELECT,
+            QuestionType.RADIO,
+            QuestionType.ADDRESS,
+          ].includes(local.type)
         ) {
           if (!values) {
             // if no values provided - continue recursion with all options nextQuestion

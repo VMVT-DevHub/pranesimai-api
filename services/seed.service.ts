@@ -43,7 +43,7 @@ type SurveyTemplate = {
       authRelation?: Question['authRelation'];
       condition?: {
         question: number | string; // excel id
-        value?: Question['condition']['value']; // if not present, will be detected automatically
+        value?: Question['condition'] extends { value: infer V } ? V : any; // if not present, will be detected automatically
         valueIndex?: number; // index of question option
       };
       dynamicFields?: Array<{
@@ -84,7 +84,7 @@ const q = (
 
 type TypeFactory = (
   id: number | string,
-  nextQuestion: number | string,
+  nextQuestion: number | string | undefined,
   title: Question['title'],
   fields?: Partial<SurveyTemplateQuestion>,
 ) => SurveyTemplateQuestion;
@@ -95,6 +95,7 @@ q.datetime = q.bind(null, QuestionType.DATETIME) as TypeFactory;
 q.select = q.bind(null, QuestionType.SELECT) as TypeFactory;
 q.multiselect = q.bind(null, QuestionType.MULTISELECT) as TypeFactory;
 q.radio = q.bind(null, QuestionType.RADIO) as TypeFactory;
+q.address = q.bind(null, QuestionType.ADDRESS) as TypeFactory;
 q.location = q.bind(null, QuestionType.LOCATION) as TypeFactory;
 q.text = q.bind(null, QuestionType.TEXT) as TypeFactory;
 q.checkbox = q.bind(null, QuestionType.CHECKBOX) as TypeFactory;
@@ -148,16 +149,25 @@ const helperVeiklos = (id: number | string, idOut: number | string, qa: Question
 
 const AddressHelper = (id: number | string, idOut: number | string, qa: QuestionExtends = {}) => [
   q.radio(id, undefined, 'Nurodykite prekybos būdą', {
-    options: [os('Fizinėje prekybos vietoje', `${id}.1`), os('Internetu', `${id}.2`)],
+    options: [
+      os('Fizinėje prekybos vietoje', `${id}.1`),
+      os('Internetu', `${id}.2`),
+      os('Socialiniais tinklais', `${id}.3`),
+    ],
     spField: 'prek_tip',
     ...qa,
   }),
-  q.input(`${id}.1`, idOut, 'Nurodykite prekybos vietos adresą (sav., gyv., gatvė, namas, butas)', {
+  q.address(`${id}.1`, idOut, 'Nurodykite prekybos vietos adresą (gyv., gatvė, namo numeris)', {
     condition: c(id),
     spField: 'adresas',
     ...qa,
   }),
   q.input(`${id}.2`, idOut, 'Pateikite nuoroda į internetinės prekybos puslapį', {
+    condition: c(id),
+    spField: 'pap_info',
+    ...qa,
+  }),
+  q.input(`${id}.3`, idOut, 'Pateikite nuoroda į socialinius tinklus', {
     condition: c(id),
     spField: 'pap_info',
     ...qa,
@@ -578,7 +588,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               }),
             ],
           }),
-          q.input(21, 22, 'Nurodykite prekybos vietos adresą (sav., gyv., gatvė, namas, butas)', {
+          q.address(21, 22, 'Nurodykite prekybos vietos adresą (gyv., gatvė, namo numeris)', {
             riskEvaluation: false,
             dynamicFields: [
               ...dm(4, [0, 1], {
@@ -1218,20 +1228,15 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         title: 'Laikymo vietos informacija',
         questions: [
-          q.input(
-            14,
-            '14.1',
-            'Nurodykite veiklos vykdymo adresą (sav., gyv., gatvė, namas, butas)',
-            {
-              riskEvaluation: false,
-              spField: 'adresas',
-              dynamicFields: [
-                ...dm(5, [5], {
-                  condition: false,
-                }),
-              ],
-            },
-          ),
+          q.address(14, '14.1', 'Nurodykite veiklos vykdymo adresą (gyv., gatvė, namo numeris)', {
+            riskEvaluation: false,
+            dynamicFields: [
+              ...dm(5, [5], {
+                condition: false,
+              }),
+            ],
+            spField: 'adresas',
+          }),
           q.location('14.1', 15, 'Žemėlapyje nurodykite gyvūno(-ų) laikymo vietą', {
             riskEvaluation: false,
             dynamicFields: [
@@ -1310,14 +1315,14 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ],
             spField: 'koord',
           }),
-          q.input(16, 17, 'Nurodykite veiklos vykdymo adresą (sav., gyv., gatvė, namas, butas)', {
-            spField: 'adresas',
+          q.address(16, 17, 'Nurodykite veiklos vykdymo adresą (gyv., gatvė, namo numeris)', {
             riskEvaluation: false,
             dynamicFields: [
               ...dm(5, [3, 2, 5], {
                 condition: false,
               }),
             ],
+            spField: 'adresas',
           }),
           q.input(17, 18, 'Nurodykite veiklos pavadinimą', {
             spField: 'veik_pav',
@@ -1800,7 +1805,7 @@ export default class SeedService extends moleculer.Service {
     for (const surveyItem of surveys) {
       const { pages, ...surveyData } = surveyItem;
       const questionByExcelId: Record<string, Partial<Question<'options'>>> = {};
-      let firstPage: Page['id'];
+      let firstPage: Page['id'] | undefined;
 
       // 1 - first step: create pages with partial questions
       for (const pageItem of pages) {
@@ -1848,7 +1853,10 @@ export default class SeedService extends moleculer.Service {
                 value:
                   df.condition.value !== undefined
                     ? df.condition.value
-                    : questionByExcelId[df.condition.question].options[df.condition.valueIndex].id,
+                    : df.condition.valueIndex !== undefined
+                    ? questionByExcelId[df.condition.question].options?.[df.condition.valueIndex]
+                        ?.id
+                    : undefined,
               },
               values: df.values,
             })),
@@ -1889,10 +1897,10 @@ export default class SeedService extends moleculer.Service {
                     condition.value !== undefined
                       ? condition.value
                       : condition.valueIndex !== undefined
-                      ? questionByExcelId[condition.question].options[condition.valueIndex].id
-                      : questionByExcelId[condition.question].options.find(
+                      ? questionByExcelId[condition.question].options?.[condition.valueIndex]?.id
+                      : questionByExcelId[condition.question].options?.find(
                           (o) => o.nextQuestion === questionByExcelId[excelId].id,
-                        ).id,
+                        )?.id,
                 }
               : undefined,
             dynamicFields: dynamicFields?.map((df) => {
@@ -1913,8 +1921,10 @@ export default class SeedService extends moleculer.Service {
                   value:
                     df.condition.value !== undefined
                       ? df.condition.value
-                      : questionByExcelId[df.condition.question].options[df.condition.valueIndex]
-                          .id,
+                      : df.condition.valueIndex !== undefined
+                      ? questionByExcelId[df.condition.question].options?.[df.condition.valueIndex]
+                          ?.id
+                      : undefined,
                 },
                 values,
               };

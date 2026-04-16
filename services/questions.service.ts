@@ -22,6 +22,7 @@ export enum QuestionType {
   // value = option.id
   SELECT = 'SELECT',
   RADIO = 'RADIO',
+  ADDRESS = 'ADDRESS',
 
   // value = [11,23] (array of option.id)
   MULTISELECT = 'MULTISELECT',
