@@ -1550,7 +1550,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             riskEvaluation: false,
             spField: 'ivykio_data',
           }),
-          q.input(5, 6, 'Nurodykite vietos adresą (sav., gyv., gatvė, namas, butas)', {
+          q.address(5, 6, 'Nurodykite vietos adresą (gyv., gatvė, numeris)', {
             riskEvaluation: false,
             spField: 'adresas',
           }),
