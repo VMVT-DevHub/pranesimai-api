@@ -130,7 +130,11 @@ const os = (title: string, nextQuestion?: number | string) => ({
 
 const helperVeiklos = (id: number | string, idOut: number | string, qa: QuestionExtends = {}) => [
   q.radio(id, undefined, 'Nurodykite prekybos būdą', {
-    options: [os('Fizinėje prekybos vietoje', `${id}.1`), os('Internetu', `${id}.2`)],
+    options: [
+      os('Fizinėje prekybos vietoje', `${id}.1`),
+      os('Internetu', `${id}.2`),
+      os('Socialiniais tinklais', `${id}.3`),
+    ],
     spField: 'prek_tip',
     ...qa,
   }),
@@ -140,7 +144,12 @@ const helperVeiklos = (id: number | string, idOut: number | string, qa: Question
     spField: 'koord',
     ...qa,
   }),
-  q.input(`${id}.2`, idOut, 'Pateikite nuoroda į internetinės prekybos puslapį', {
+  q.input(`${id}.2`, idOut, 'Pateikite nuorodą į internetinės prekybos puslapį', {
+    condition: c(id),
+    spField: 'pap_info',
+    ...qa,
+  }),
+  q.input(`${id}.3`, idOut, 'Pateikite nuorodą į socialinius tinklus', {
     condition: c(id),
     spField: 'pap_info',
     ...qa,
@@ -162,12 +171,12 @@ const AddressHelper = (id: number | string, idOut: number | string, qa: Question
     spField: 'adresas',
     ...qa,
   }),
-  q.input(`${id}.2`, idOut, 'Pateikite nuoroda į internetinės prekybos puslapį', {
+  q.input(`${id}.2`, idOut, 'Pateikite nuorodą į internetinės prekybos puslapį', {
     condition: c(id),
     spField: 'pap_info',
     ...qa,
   }),
-  q.input(`${id}.3`, idOut, 'Pateikite nuoroda į socialinius tinklus', {
+  q.input(`${id}.3`, idOut, 'Pateikite nuorodą į socialinius tinklus', {
     condition: c(id),
     spField: 'pap_info',
     ...qa,
