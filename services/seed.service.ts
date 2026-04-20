@@ -133,7 +133,7 @@ const helperVeiklos = (id: number | string, idOut: number | string, qa: Question
     options: [
       os('Fizinėje prekybos vietoje', `${id}.1`),
       os('Internetu', `${id}.2`),
-      os('Socialiniais tinklais', `${id}.3`),
+      os('Socialiniuose interneto tinkluose', `${id}.3`),
     ],
     spField: 'prek_tip',
     ...qa,
@@ -149,7 +149,7 @@ const helperVeiklos = (id: number | string, idOut: number | string, qa: Question
     spField: 'pap_info',
     ...qa,
   }),
-  q.input(`${id}.3`, idOut, 'Pateikite nuorodą į socialinius tinklus', {
+  q.input(`${id}.3`, idOut, 'Pateikite nuorodą į socialinius interneto tinklus', {
     condition: c(id),
     spField: 'pap_info',
     ...qa,
@@ -161,7 +161,7 @@ const AddressHelper = (id: number | string, idOut: number | string, qa: Question
     options: [
       os('Fizinėje prekybos vietoje', `${id}.1`),
       os('Internetu', `${id}.2`),
-      os('Socialiniais tinklais', `${id}.3`),
+      os('Socialiniuose interneto tinkluose', `${id}.3`),
     ],
     spField: 'prek_tip',
     ...qa,
@@ -176,7 +176,7 @@ const AddressHelper = (id: number | string, idOut: number | string, qa: Question
     spField: 'pap_info',
     ...qa,
   }),
-  q.input(`${id}.3`, idOut, 'Pateikite nuorodą į socialinius tinklus', {
+  q.input(`${id}.3`, idOut, 'Pateikite nuorodą į socialinius interneto tinklus', {
     condition: c(id),
     spField: 'pap_info',
     ...qa,
