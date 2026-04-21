@@ -156,6 +156,33 @@ const helperVeiklos = (id: number | string, idOut: number | string, qa: Question
   }),
 ];
 
+const AnimalHelper = (id: number | string, idOut: number | string, qa: QuestionExtends = {}) => [
+  q.radio(id, undefined, 'Nurodykite veiklos vykdymo būdą', {
+    options: [
+      os('Fizinėje prekybos vietoje', `${id}.1`),
+      os('Internetu', `${id}.2`),
+      os('Socialiniuose interneto tinkluose', `${id}.3`),
+    ],
+    spField: 'prek_tip',
+    ...qa,
+  }),
+  q.address(`${id}.1`, idOut, 'Nurodykite veiklos vykdymo adresą (gyv., gatvė, namo numeris)', {
+    condition: c(id),
+    spField: 'adresas',
+    ...qa,
+  }),
+  q.input(`${id}.2`, idOut, 'Pateikite nuorodą į internetinį puslapį', {
+    condition: c(id),
+    spField: 'pap_info',
+    ...qa,
+  }),
+  q.input(`${id}.3`, idOut, 'Pateikite nuorodą į socialinius  tinklus', {
+    condition: c(id),
+    spField: 'pap_info',
+    ...qa,
+  }),
+];
+
 const AddressHelper = (id: number | string, idOut: number | string, qa: QuestionExtends = {}) => [
   q.radio(id, undefined, 'Nurodykite prekybos būdą', {
     options: [
@@ -1237,16 +1264,14 @@ const SURVEYS_SEED: SurveyTemplate[] = [
       {
         title: 'Laikymo vietos informacija',
         questions: [
-          q.address(14, '14.1', 'Nurodykite veiklos vykdymo adresą (gyv., gatvė, namo numeris)', {
-            riskEvaluation: false,
+          ...AnimalHelper('14', '14.4', {
             dynamicFields: [
               ...dm(5, [5], {
                 condition: false,
               }),
             ],
-            spField: 'adresas',
           }),
-          q.location('14.1', 15, 'Žemėlapyje nurodykite gyvūno(-ų) laikymo vietą', {
+          q.location('14.4', 15, 'Žemėlapyje nurodykite gyvūno(-ų) laikymo vietą', {
             riskEvaluation: false,
             dynamicFields: [
               ...dm(5, [0, 1, 2, 3, 4, 6, 7, 8, 9], {
@@ -1307,7 +1332,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ],
             spField: 'pap_info',
           }),
-          ...AddressHelper('16.1', '16.2', {
+          ...AnimalHelper('16.1', '16.5', {
             dynamicFields: [
               // $ne: 3, 2
               ...dm(5, [0, 1, 4, 5, 6, 7, 8, 9], {
@@ -1315,7 +1340,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               }),
             ],
           }),
-          q.location('16.2', 16, 'Žemėlapyje nurodykite veiklos vietą', {
+          q.location('16.5', '16.11', 'Žemėlapyje nurodykite veiklos vietą', {
             riskEvaluation: false,
             dynamicFields: [
               ...dm(5, [0, 1, 2, 3, 4, 6, 7, 8, 9], {
@@ -1324,14 +1349,13 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             ],
             spField: 'koord',
           }),
-          q.address(16, 17, 'Nurodykite veiklos vykdymo adresą (gyv., gatvė, namo numeris)', {
+          ...AnimalHelper('16.11', 17, {
             riskEvaluation: false,
             dynamicFields: [
               ...dm(5, [3, 2, 5], {
                 condition: false,
               }),
             ],
-            spField: 'adresas',
           }),
           q.input(17, 18, 'Nurodykite veiklos pavadinimą', {
             spField: 'veik_pav',
