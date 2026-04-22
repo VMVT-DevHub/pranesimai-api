@@ -166,7 +166,7 @@ const AnimalHelper = (id: number | string, idOut: number | string, qa: QuestionE
     spField: 'prek_tip',
     ...qa,
   }),
-  q.address(`${id}.1`, idOut, 'Nurodykite veiklos vykdymo adresą (gyv., gatvė, namo numeris)', {
+  q.input(`${id}.1`, idOut, 'Nurodykite veiklos vykdymo adresą (gyv., gatvė, namo numeris)', {
     condition: c(id),
     spField: 'adresas',
     ...qa,
@@ -193,7 +193,7 @@ const AddressHelper = (id: number | string, idOut: number | string, qa: Question
     spField: 'prek_tip',
     ...qa,
   }),
-  q.address(`${id}.1`, idOut, 'Nurodykite prekybos vietos adresą (gyv., gatvė, namo numeris)', {
+  q.input(`${id}.1`, idOut, 'Nurodykite prekybos vietos adresą (gyv., gatvė, namo numeris)', {
     condition: c(id),
     spField: 'adresas',
     ...qa,
@@ -624,7 +624,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
               }),
             ],
           }),
-          q.address(21, 22, 'Nurodykite prekybos vietos adresą (gyv., gatvė, namo numeris)', {
+          q.input(21, 22, 'Nurodykite prekybos vietos adresą (gyv., gatvė, namo numeris)', {
             riskEvaluation: false,
             dynamicFields: [
               ...dm(4, [0, 1], {
@@ -1583,7 +1583,7 @@ const SURVEYS_SEED: SurveyTemplate[] = [
             riskEvaluation: false,
             spField: 'ivykio_data',
           }),
-          q.address(5, 6, 'Nurodykite vietos adresą (gyv., gatvė, numeris)', {
+          q.input(5, 6, 'Nurodykite vietos adresą (gyv., gatvė, numeris)', {
             riskEvaluation: false,
             spField: 'adresas',
           }),
