@@ -52,42 +52,6 @@ export type Session<
   ],
 
   settings: {
-    actions: {
-      count: {
-        auth: RestrictionType.SESSION,
-      },
-      create: {
-        auth: RestrictionType.SESSION,
-      },
-      find: {
-        auth: RestrictionType.SESSION,
-      },
-      findOne: {
-        auth: RestrictionType.SESSION,
-      },
-      get: {
-        auth: RestrictionType.SESSION,
-      },
-      insert: {
-        auth: RestrictionType.SESSION,
-      },
-      list: {
-        auth: RestrictionType.SESSION,
-      },
-      remove: {
-        auth: RestrictionType.SESSION,
-      },
-      removeAllEntities: {
-        auth: RestrictionType.SESSION,
-      },
-      resolve: {
-        auth: RestrictionType.SESSION,
-      },
-      update: {
-        auth: RestrictionType.SESSION,
-      },
-    },
-
     fields: {
       id: {
         type: 'number',
@@ -144,6 +108,61 @@ export type Session<
     },
 
     defaultScopes: [...COMMON_DEFAULT_SCOPES, 'session'],
+  },
+
+  actions: {
+    count: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    create: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    find: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    findOne: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    get: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    insert: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    list: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    populateByProp: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    remove: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    removeAllEntities: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    replace: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    resolve: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
+    update: {
+      rest: null,
+      auth: RestrictionType.SESSION,
+    },
   },
 })
 export default class SessionsService extends moleculer.Service {
