@@ -207,6 +207,7 @@ export default class SessionsService extends moleculer.Service {
     );
 
     let session: Session;
+    let token: string | undefined;
 
     if (ctx.meta.session?.id) {
       session = await this.updateEntity(ctx, {
@@ -217,22 +218,22 @@ export default class SessionsService extends moleculer.Service {
         phone,
       });
     } else {
+      token = crypto.randomBytes(64).toString('hex');
       session = await this.createEntity(ctx, {
         survey: survey.id,
         auth,
         email,
         phone,
-        token: crypto.randomBytes(64).toString('hex'),
+        token,
       });
+      ctx.meta.$responseHeaders = {
+        'Set-Cookie': cookie.serialize('vmvt-session-token', token, {
+          path: '/',
+          httpOnly: true,
+          maxAge: SESSION_MAX_AGE_SECONDS,
+        }),
+      };
     }
-
-    ctx.meta.$responseHeaders = {
-      'Set-Cookie': cookie.serialize('vmvt-session-token', session.token, {
-        path: '/',
-        httpOnly: true,
-        maxAge: SESSION_MAX_AGE_SECONDS,
-      }),
-    };
 
     let lastResponse: Response = await ctx.call('responses.findOne', {
       query: {
