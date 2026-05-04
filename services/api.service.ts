@@ -61,9 +61,9 @@ const openApiRoutes =
       {
         path: '/',
         whitelist: [
-          'addresses.findAddressByPlaceId',
-          'addresses.findAddressByQuery',
-          'addresses.searchStreet',
+          'addresses.findAdr',
+          'addresses.findGyv',
+          'addresses.searchGat',
           'api.ping',
           'files.uploadFile',
           'responses.get',
