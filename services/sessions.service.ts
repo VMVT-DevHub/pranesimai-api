@@ -35,6 +35,8 @@ interface Populates extends CommonPopulates {
   lastResponse: Response;
 }
 
+export const SESSION_MAX_AGE_SECONDS = 60 * 30;
+
 export type Session<
   P extends keyof Populates = never,
   F extends keyof (Fields & Populates) = keyof Fields,
@@ -51,6 +53,42 @@ export type Session<
   ],
 
   settings: {
+    actions: {
+      count: {
+        auth: RestrictionType.SESSION,
+      },
+      create: {
+        auth: RestrictionType.SESSION,
+      },
+      find: {
+        auth: RestrictionType.SESSION,
+      },
+      findOne: {
+        auth: RestrictionType.SESSION,
+      },
+      get: {
+        auth: RestrictionType.SESSION,
+      },
+      insert: {
+        auth: RestrictionType.SESSION,
+      },
+      list: {
+        auth: RestrictionType.SESSION,
+      },
+      remove: {
+        auth: RestrictionType.SESSION,
+      },
+      removeAllEntities: {
+        auth: RestrictionType.SESSION,
+      },
+      resolve: {
+        auth: RestrictionType.SESSION,
+      },
+      update: {
+        auth: RestrictionType.SESSION,
+      },
+    },
+
     fields: {
       id: {
         type: 'number',
@@ -80,6 +118,7 @@ export type Session<
 
       token: {
         type: 'string',
+        hidden: 'byDefault',
       },
 
       auth: 'boolean',
@@ -94,9 +133,18 @@ export type Session<
 
     scopes: {
       ...COMMON_SCOPES,
+
+      async session(q: any, ctx: Context<unknown, MetaSession>) {
+        if (!ctx?.meta?.session) return q;
+
+        return {
+          ...q,
+          id: ctx.meta.session.id,
+        };
+      },
     },
 
-    defaultScopes: [...COMMON_DEFAULT_SCOPES],
+    defaultScopes: [...COMMON_DEFAULT_SCOPES, 'session'],
   },
 })
 export default class SessionsService extends moleculer.Service {
@@ -219,7 +267,7 @@ export default class SessionsService extends moleculer.Service {
       'Set-Cookie': cookie.serialize('vmvt-session-token', session.token, {
         path: '/',
         httpOnly: true,
-        maxAge: 60 * 30, // 30 mins
+        maxAge: SESSION_MAX_AGE_SECONDS,
       }),
     };
 
@@ -290,5 +338,20 @@ export default class SessionsService extends moleculer.Service {
         maxAge: 0,
       }),
     };
+  }
+
+  @Method
+  async checkScopeAuthority(
+    _ctx: Context<unknown, MetaSession>,
+    scopeName: string,
+    operation: 'add' | 'remove',
+  ) {
+    if (scopeName === 'session') {
+      if (operation === 'remove') {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

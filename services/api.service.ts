@@ -2,8 +2,9 @@ import cookie from 'cookie';
 import moleculer, { Context, Errors } from 'moleculer';
 import { Action, Method, Service } from 'moleculer-decorators';
 import ApiGateway, { IncomingRequest, Route } from 'moleculer-web';
+import { ResponseHeadersMeta } from '../types';
 import { EndpointType } from '../types';
-import { Session } from './sessions.service';
+import { Session, SESSION_MAX_AGE_SECONDS } from './sessions.service';
 import { Survey } from './surveys.service';
 
 export interface MetaSession {
@@ -123,7 +124,11 @@ export default class ApiService extends moleculer.Service {
   }
 
   @Method
-  async authenticate(ctx: Context<unknown, MetaSession>, _route: Route, req: IncomingRequest) {
+  async authenticate(
+    ctx: Context<unknown, MetaSession & ResponseHeadersMeta>,
+    _route: Route,
+    req: IncomingRequest,
+  ) {
     const cookies = cookie.parse(req.headers.cookie || '');
     if (!cookies['vmvt-session-token']) {
       return;
@@ -139,7 +144,28 @@ export default class ApiService extends moleculer.Service {
       return;
     }
 
+    if (this.isExpiredSession(session)) {
+      ctx.meta.$responseHeaders = {
+        'Set-Cookie': cookie.serialize('vmvt-session-token', '', {
+          path: '/',
+          httpOnly: true,
+          maxAge: 0,
+        }),
+      };
+      return;
+    }
+
     ctx.meta.session = session;
+  }
+
+  @Method
+  isExpiredSession(session: Session) {
+    if (session.finishedAt || session.canceledAt) {
+      return true;
+    }
+
+    const createdAt = new Date(session.createdAt).getTime();
+    return createdAt + SESSION_MAX_AGE_SECONDS * 1000 < Date.now();
   }
 
   @Method
