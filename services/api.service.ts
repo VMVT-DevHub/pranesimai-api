@@ -3,6 +3,7 @@ import moleculer, { Context, Errors } from 'moleculer';
 import { Action, Method, Service } from 'moleculer-decorators';
 import ApiGateway, { IncomingRequest, Route } from 'moleculer-web';
 import { EndpointType, ResponseHeadersMeta, SESSION_MAX_AGE_SECONDS } from '../types';
+import { ServerResponse } from 'http';
 import { Session } from './sessions.service';
 import { Survey } from './surveys.service';
 
@@ -198,5 +199,90 @@ export default class ApiService extends moleculer.Service {
   @Method
   getRestrictionType(req: IncomingRequest) {
     return req.$action.auth || req.$action.service?.settings?.auth || RestrictionType.PUBLIC;
+  }
+
+  @Method
+  sendError(
+    req: IncomingRequest & { $next?: (err: Error) => void; $ctx?: any },
+    res: ServerResponse,
+    err: any,
+  ) {
+    if (!this.shouldSanitizeErrors()) {
+      return ApiGateway.methods.sendError.call(this, req, res, err);
+    }
+
+    if (req.$next) {
+      return req.$next(err);
+    }
+
+    if (res.headersSent) {
+      this.logger.warn('Headers have already sent', req.url, err);
+      return;
+    }
+
+    const responseHeaders = req.$ctx?.meta?.$responseHeaders;
+    if (responseHeaders) {
+      Object.keys(responseHeaders).forEach((key) => {
+        try {
+          res.setHeader(key, responseHeaders[key]);
+        } catch (_error) {
+          res.setHeader(key, encodeURI(responseHeaders[key]));
+        }
+      });
+    }
+
+    const code = this.getErrorStatusCode(err);
+    if (this.requestAcceptsHtml(req)) {
+      res.writeHead(code);
+      res.end();
+    } else {
+      res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(
+        JSON.stringify({
+          code,
+          message: this.getPublicErrorMessage(code),
+        }),
+      );
+    }
+
+    this.logResponse(req, res);
+  }
+
+  @Method
+  shouldSanitizeErrors() {
+    return process.env.NODE_ENV !== 'local';
+  }
+
+  @Method
+  getErrorStatusCode(err: any) {
+    return typeof err?.code === 'number' && err.code >= 400 && err.code < 600 ? err.code : 500;
+  }
+
+  @Method
+  getPublicErrorMessage(code: number) {
+    switch (code) {
+      case 400:
+        return 'Bad Request';
+      case 401:
+        return 'Unauthorized';
+      case 403:
+        return 'Forbidden';
+      case 404:
+        return 'Not Found';
+      case 405:
+        return 'Method Not Allowed';
+      case 413:
+        return 'Payload Too Large';
+      case 429:
+        return 'Too Many Requests';
+      default:
+        return code >= 500 ? 'Internal Server Error' : 'Request Failed';
+    }
+  }
+
+  @Method
+  requestAcceptsHtml(req: IncomingRequest) {
+    const accept = req.headers.accept || '';
+    return typeof accept === 'string' && accept.includes('text/html');
   }
 }
