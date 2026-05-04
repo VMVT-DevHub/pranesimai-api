@@ -16,6 +16,22 @@ export enum RestrictionType {
   SESSION = 'SESSION',
 }
 
+const openApiRoutes =
+  process.env.NODE_ENV === 'production'
+    ? []
+    : [
+        {
+          path: '/openapi',
+          authorization: false,
+          authentication: false,
+          aliases: {
+            'GET /openapi.json': 'openapi.generateDocs', // swagger scheme
+            'GET /ui': 'openapi.ui', // ui
+            'GET /assets/:file': 'openapi.assets', // js/css files
+          },
+        },
+      ];
+
 @Service({
   name: 'api',
   mixins: [ApiGateway],
@@ -41,16 +57,7 @@ export enum RestrictionType {
     },
 
     routes: [
-      {
-        path: '/openapi',
-        authorization: false,
-        authentication: false,
-        aliases: {
-          'GET /openapi.json': 'openapi.generateDocs', // swagger scheme
-          'GET /ui': 'openapi.ui', // ui
-          'GET /assets/:file': 'openapi.assets', // js/css files
-        },
-      },
+      ...openApiRoutes,
       {
         path: '/',
         whitelist: [
