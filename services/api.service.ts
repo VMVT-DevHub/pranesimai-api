@@ -53,8 +53,19 @@ export enum RestrictionType {
       {
         path: '/',
         whitelist: [
-          // Access to any actions in all services under "/" URL
-          '**',
+          'addresses.findAddressByPlaceId',
+          'addresses.findAddressByQuery',
+          'addresses.searchStreet',
+          'api.ping',
+          'files.uploadFile',
+          'responses.get',
+          'responses.respond',
+          'sessions.cancel',
+          'sessions.current',
+          'sessions.evartai',
+          'sessions.start',
+          'surveys.getAll',
+          'surveys.mermaid',
         ],
 
         // Route-level Express middlewares. More info: https://moleculer.services/docs/0.14/moleculer-web.html#Middlewares
