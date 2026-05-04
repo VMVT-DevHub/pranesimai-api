@@ -13,6 +13,7 @@ import {
   COMMON_DEFAULT_SCOPES,
   COMMON_FIELDS,
   COMMON_SCOPES,
+  SESSION_MAX_AGE_SECONDS,
   Table,
   ResponseHeadersMeta,
 } from '../types';
@@ -34,8 +35,6 @@ interface Populates extends CommonPopulates {
   survey: Survey;
   lastResponse: Response;
 }
-
-export const SESSION_MAX_AGE_SECONDS = 60 * 30;
 
 export type Session<
   P extends keyof Populates = never,

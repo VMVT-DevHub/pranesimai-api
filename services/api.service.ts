@@ -2,9 +2,8 @@ import cookie from 'cookie';
 import moleculer, { Context, Errors } from 'moleculer';
 import { Action, Method, Service } from 'moleculer-decorators';
 import ApiGateway, { IncomingRequest, Route } from 'moleculer-web';
-import { ResponseHeadersMeta } from '../types';
-import { EndpointType } from '../types';
-import { Session, SESSION_MAX_AGE_SECONDS } from './sessions.service';
+import { EndpointType, ResponseHeadersMeta, SESSION_MAX_AGE_SECONDS } from '../types';
+import { Session } from './sessions.service';
 import { Survey } from './surveys.service';
 
 export interface MetaSession {
