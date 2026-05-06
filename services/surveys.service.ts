@@ -120,15 +120,11 @@ export default class SurveysService extends moleculer.Service {
       sort: '-priority',
     });
 
-    if (!ctx.meta.isExternalRequest) {
-      return surveys;
-    }
-
     return surveys.map((survey) =>
       survey.authType === SurveyAuthType.OPTIONAL
         ? {
             ...survey,
-            authType: SurveyAuthType.REQUIRED,
+            anonymousAuthAvailable: !ctx.meta.isExternalRequest,
           }
         : survey,
     );
