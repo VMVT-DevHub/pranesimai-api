@@ -126,16 +126,20 @@ export default class SessionsService extends moleculer.Service {
       auth: 'boolean|convert|optional',
     },
   })
-  async start(ctx: Context<{ survey: Survey['id']; auth?: boolean }, ResponseHeadersMeta>) {
+  async start(
+    ctx: Context<{ survey: Survey['id']; auth?: boolean }, ResponseHeadersMeta & MetaSession>,
+  ) {
     const survey: Survey = await ctx.call('surveys.resolve', {
       id: ctx.params.survey,
       throwIfNotExist: true,
     });
 
-    if (
+    const shouldRequireAuth =
       survey.authType === SurveyAuthType.REQUIRED ||
-      (survey.authType === SurveyAuthType.OPTIONAL && ctx.params.auth)
-    ) {
+      (survey.authType === SurveyAuthType.OPTIONAL &&
+        (ctx.params.auth || ctx.meta.isExternalRequest));
+
+    if (shouldRequireAuth) {
       const response: {
         ticket: string;
         host: string;

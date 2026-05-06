@@ -9,6 +9,7 @@ import { Survey } from './surveys.service';
 
 export interface MetaSession {
   session?: Session;
+  isExternalRequest?: boolean; // as opposed to internal VMVT network
 }
 
 export enum RestrictionType {
@@ -116,12 +117,8 @@ export enum RestrictionType {
 })
 export default class ApiService extends moleculer.Service {
   @Method
-  logIncomingHeaders(req: IncomingRequest) {
-    this.logger.info('Incoming request headers', {
-      method: req.method,
-      url: req.url,
-      headers: req.headers,
-    });
+  isExternalRequest(req: IncomingRequest) {
+    return typeof req.headers['cf-connecting-ip'] === 'string';
   }
 
   @Action({
@@ -139,7 +136,7 @@ export default class ApiService extends moleculer.Service {
     _route: Route,
     req: IncomingRequest,
   ) {
-    this.logIncomingHeaders(req);
+    ctx.meta.isExternalRequest = this.isExternalRequest(req);
 
     const cookies = cookie.parse(req.headers.cookie || '');
     if (!cookies['vmvt-session-token']) {
