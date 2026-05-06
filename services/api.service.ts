@@ -115,6 +115,19 @@ export enum RestrictionType {
   },
 })
 export default class ApiService extends moleculer.Service {
+  @Method
+  logIncomingHeaders(req: IncomingRequest) {
+    if (process.env.LOG_INCOMING_HEADERS !== 'true') {
+      return;
+    }
+
+    this.logger.info('Incoming request headers', {
+      method: req.method,
+      url: req.url,
+      headers: req.headers,
+    });
+  }
+
   @Action({
     auth: EndpointType.PUBLIC,
   })
@@ -130,6 +143,8 @@ export default class ApiService extends moleculer.Service {
     _route: Route,
     req: IncomingRequest,
   ) {
+    this.logIncomingHeaders(req);
+
     const cookies = cookie.parse(req.headers.cookie || '');
     if (!cookies['vmvt-session-token']) {
       return;
