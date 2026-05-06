@@ -117,10 +117,6 @@ export enum RestrictionType {
 export default class ApiService extends moleculer.Service {
   @Method
   logIncomingHeaders(req: IncomingRequest) {
-    if (process.env.LOG_INCOMING_HEADERS !== 'true') {
-      return;
-    }
-
     this.logger.info('Incoming request headers', {
       method: req.method,
       url: req.url,
